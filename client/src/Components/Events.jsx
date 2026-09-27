@@ -364,7 +364,7 @@ const Events = () => {
               onClick={() => handleOpenEventModal()}
             >
               <Plus size={18} />
-              <span>Create Sticky Note</span>
+              <span>Create Event</span>
             </button>
           )}
 
@@ -391,7 +391,7 @@ const Events = () => {
           <div className="empty-board">
             <p>No events found.</p>
             {hasEventAdminRights && (
-              <span>Click "Create Sticky Note" to add one!</span>
+              <span>Click "Create Event" to add one!</span>
             )}
           </div>
         ) : (
