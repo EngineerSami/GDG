@@ -98,10 +98,40 @@ const eventSchema = new mongoose.Schema(
   }
 );
 
+// --- CHAT MESSAGE SCHEMA ---
+const messageSchema = new mongoose.Schema(
+  {
+    senderName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    senderRole: {
+      type: String,
+      default: "Member",
+    },
+    campus: {
+      type: String,
+      required: true,
+      enum: ["Ramallah", "Jenin"],
+    },
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+const Message = mongoose.model("Message", messageSchema);
 const User = mongoose.model("User", userSchema);
 const Event = mongoose.model("Event", eventSchema);
 
 module.exports = {
   User,
   Event,
+  Message,
 };

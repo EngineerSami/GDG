@@ -1,4 +1,4 @@
-const { User, Event } = require("../models/Model");
+const { User, Event, Message } = require("../models/Model");
 
 // ==========================================
 // USER CONTROLLERS
@@ -6,6 +6,32 @@ const { User, Event } = require("../models/Model");
 
 // @desc    Register or Log In using just Full Name
 // @route   POST /api/users
+
+
+const getCampusMessages = async (req, res) => {
+  try {
+    const { campus } = req.query;
+
+    if (!campus || !["Ramallah", "Jenin"].includes(campus)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid campus query (Ramallah or Jenin) is required",
+      });
+    }
+
+    // Fetch the last 50 messages in chronological order
+    const messages = await Message.find({ campus })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.status(200).json({
+      success: true,
+      data: messages.reverse(),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
 const saveUserData = async (req, res) => {
   try {
     const { fullName } = req.body;
@@ -365,6 +391,7 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getEventById,
+  getCampusMessages,
   // Sponsors
   addSponsor,
   updateSponsor,

@@ -14,6 +14,7 @@ const {
   updateSponsor,
   deleteSponsor,
   getEventById,
+  getCampusMessages,
 } = require("../controllers/Controller");
 
 // --- USER ROUTES ---
@@ -29,6 +30,9 @@ router.route("/users/:id/status")
   .get(getUserStatus);
 
 // --- EVENT ROUTES ---
+
+router.route("/messages").get(getCampusMessages);
+
 router.route("/events")
   .get(getEventsByCampus)
   .post(createEvent);

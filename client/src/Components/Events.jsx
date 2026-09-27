@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
+import ChatWidget from "./ChatWidget";
 import "../Styles/Events.css";
 import {
   Calendar,
@@ -262,9 +263,15 @@ const Events = () => {
 
       const result = await res.json();
       if (res.ok) {
-        setEvents((prev) =>
-          prev.map((ev) => (ev._id === selectedEvent._id ? result.data : ev))
-        );
+        if (editingEvent) {
+          setEvents((prev) =>
+            prev.map((ev) => (ev._id === selectedEvent._id ? result.data : ev))
+          );
+        } else {
+          setEvents((prev) =>
+            prev.map((ev) => (ev._id === selectedEvent._id ? result.data : ev))
+          );
+        }
         setSelectedEvent(result.data);
         setSponsorForm({
           _id: null,
@@ -364,7 +371,7 @@ const Events = () => {
               onClick={() => handleOpenEventModal()}
             >
               <Plus size={18} />
-              <span>Create Event</span>
+              <span>Create Sticky Note</span>
             </button>
           )}
 
@@ -391,7 +398,7 @@ const Events = () => {
           <div className="empty-board">
             <p>No events found.</p>
             {hasEventAdminRights && (
-              <span>Click "Create Event" to add one!</span>
+              <span>Click "Create Sticky Note" to add one!</span>
             )}
           </div>
         ) : (
@@ -630,7 +637,7 @@ const Events = () => {
                 ) : (
                   selectedEvent.sponsors.map((sp) => (
                     <div key={sp._id} className="sponsor-card">
-                      {/* TOP ROW: Sponsor Details */}
+                      {/* TOP ROW: Sponsor Info */}
                       <div className="sponsor-info">
                         <h4>{sp.name}</h4>
                         <div className="sponsor-meta-row">
@@ -650,7 +657,7 @@ const Events = () => {
                         </div>
                       </div>
 
-                      {/* BOTTOM ROW: Status Badge on Left, Action Buttons on Right */}
+                      {/* BOTTOM ROW: Status Pill & Action Buttons */}
                       <div className="sponsor-footer-row">
                         <span
                           className={`status-pill status-${(sp.status || "suggestion")
@@ -666,6 +673,7 @@ const Events = () => {
                             className="action-btn edit-btn"
                             onClick={() => handleEditSponsorInit(sp)}
                             title="Edit Sponsor"
+                            aria-label="Edit Sponsor"
                           >
                             <Edit2 size={15} color="#3c4043" />
                           </button>
@@ -674,6 +682,7 @@ const Events = () => {
                             className="action-btn delete-btn"
                             onClick={() => handleDeleteSponsor(sp._id)}
                             title="Delete Sponsor"
+                            aria-label="Delete Sponsor"
                           >
                             <Trash2 size={15} color="#ea4335" />
                           </button>
@@ -687,6 +696,9 @@ const Events = () => {
           </div>
         </div>
       )}
+
+      {/* Floating Real-Time Campus Chat */}
+      <ChatWidget socket={socket} currentUser={user} />
     </div>
   );
 };
