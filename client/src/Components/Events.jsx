@@ -630,6 +630,7 @@ const Events = () => {
                 ) : (
                   selectedEvent.sponsors.map((sp) => (
                     <div key={sp._id} className="sponsor-card">
+                      {/* TOP ROW: Sponsor Details */}
                       <div className="sponsor-info">
                         <h4>{sp.name}</h4>
                         <div className="sponsor-meta-row">
@@ -649,29 +650,30 @@ const Events = () => {
                         </div>
                       </div>
 
-                      <div className="sponsor-right">
+                      {/* BOTTOM ROW: Status Badge on Left, Action Buttons on Right */}
+                      <div className="sponsor-footer-row">
                         <span
-                          className={`status-pill status-${(sp.status || "Suggestion")
+                          className={`status-pill status-${(sp.status || "suggestion")
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`}
                         >
                           {sp.status || "Suggestion"}
                         </span>
+
                         <div className="sponsor-item-actions">
                           <button
                             type="button"
+                            className="action-btn edit-btn"
                             onClick={() => handleEditSponsorInit(sp)}
                             title="Edit Sponsor"
-                            aria-label="Edit Sponsor"
                           >
                             <Edit2 size={15} color="#3c4043" />
                           </button>
                           <button
                             type="button"
-                            className="delete"
+                            className="action-btn delete-btn"
                             onClick={() => handleDeleteSponsor(sp._id)}
                             title="Delete Sponsor"
-                            aria-label="Delete Sponsor"
                           >
                             <Trash2 size={15} color="#ea4335" />
                           </button>
