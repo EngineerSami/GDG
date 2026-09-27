@@ -565,19 +565,21 @@
 /* Right Section: Badges & Buttons Guaranteed Visible */
 .sponsor-right {
   display: flex !important;
-  align-items: center;
-  gap: 12px;
-  flex: 0 0 auto;
-  margin-left: auto;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+  min-width: fit-content !important;
+  margin-left: auto !important;
 }
 
-/* Sponsor Status Badges */
 .status-pill {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 14px;
-  white-space: nowrap;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 90px !important;
+  text-align: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .status-suggestion { background: #f1f3f4; color: #5f6368; }
@@ -586,10 +588,23 @@
 .status-rejected { background: #fce8e6; color: #c5221f; text-decoration: line-through; }
 .status-approved { background: #e6f4ea; color: #137333; }
 
-.sponsor-item-actions {
-  display: flex !important;
-  align-items: center;
-  gap: 8px;
+.sponsor-item-actions button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.sponsor-item-actions svg {
+  display: block !important;
+  min-width: 15px !important;
+  min-height: 15px !important;
+  stroke: #5f6368 !important; /* Forces icon line color to show */
 }
 
 .sponsor-item-actions button {
