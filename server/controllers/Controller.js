@@ -17,6 +17,8 @@ const saveUserData = async (req, res) => {
       });
     }
 
+
+
     const trimmedName = fullName.trim();
 
     // Check if user already exists
@@ -74,6 +76,19 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
+
+    // In Controller.js
+  const getEventById = async (req, res) => {
+    try {
+      const event = await Event.findById(req.params.id);
+      if (!event) {
+        return res.status(404).json({ success: false, message: "Event not found" });
+      }
+      return res.status(200).json({ success: true, data: event });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  };
 
 // @desc    Assign Campus & Role to a User, and set Status to Approved
 // @route   PUT /api/users/:id
@@ -349,6 +364,7 @@ module.exports = {
   createEvent,
   updateEvent,
   deleteEvent,
+  getEventById,
   // Sponsors
   addSponsor,
   updateSponsor,

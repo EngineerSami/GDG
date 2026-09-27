@@ -13,6 +13,7 @@ const {
   addSponsor,
   updateSponsor,
   deleteSponsor,
+  getEventById,
 } = require("../controllers/Controller");
 
 // --- USER ROUTES ---
@@ -43,5 +44,10 @@ router.route("/events/:id/sponsors")
 router.route("/events/:eventId/sponsors/:sponsorId")
   .put(updateSponsor)
   .delete(deleteSponsor);
+
+router.route("/events/:id")
+  .get(getEventById)
+  .put(updateEvent)
+  .delete(deleteEvent);
 
 module.exports = router;
