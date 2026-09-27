@@ -1,0 +1,97 @@
+.pending-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  padding: 24px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.pending-card {
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.pending-icon-wrapper {
+  display: inline-flex;
+  padding: 16px;
+  border-radius: 50%;
+  background: #fef7e0;
+  color: #b06000;
+  margin-bottom: 20px;
+}
+
+.pulse-icon {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+.pending-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.pending-name {
+  font-size: 15px;
+  color: #202124;
+  margin-bottom: 12px;
+}
+
+.pending-desc {
+  font-size: 13.5px;
+  color: #5f6368;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.status-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #f1f3f4;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3c4043;
+  margin-bottom: 24px;
+}
+
+.status-box .dot {
+  width: 8px;
+  height: 8px;
+  background: #0f9d58;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #0f9d58;
+}
+
+.logout-btn.secondary {
+  background: transparent;
+  border: 1px solid #dadce0;
+  color: #5f6368;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.logout-btn.secondary:hover {
+  background: #f8f9fa;
+  color: #d93025;
+}
