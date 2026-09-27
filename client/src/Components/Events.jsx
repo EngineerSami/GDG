@@ -20,7 +20,6 @@ import {
   User as UserIcon,
 } from "lucide-react";
 
-// Update this if you are using an environment variable like import.meta.env.VITE_API_URL
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
 const API_BASE_URL = `${BACKEND_URL}/api/events`;
 
@@ -73,7 +72,7 @@ const Events = () => {
   });
   const [isEditingSponsor, setIsEditingSponsor] = useState(false);
 
-  // Fetching Events
+  // Fetch Events
   const fetchEvents = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -415,14 +414,14 @@ const Events = () => {
                       title="Edit Event"
                       onClick={() => handleOpenEventModal(ev)}
                     >
-                      <Edit2 size={15} />
+                      <Edit2 size={15} color="#3c4043" />
                     </button>
                     <button
                       className="note-btn delete"
                       title="Delete Event"
                       onClick={(e) => handleDeleteEvent(ev._id, e)}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={15} color="#ea4335" />
                     </button>
                   </div>
                 )}
@@ -636,14 +635,14 @@ const Events = () => {
                         <div className="sponsor-meta-row">
                           <span className="sponsor-contact">
                             {sp.contact?.includes("@") ? (
-                              <Mail size={13} />
+                              <Mail size={13} color="#5f6368" />
                             ) : (
-                              <Phone size={13} />
+                              <Phone size={13} color="#5f6368" />
                             )}
                             {sp.contact}
                           </span>
                           <span className="sponsor-added-by">
-                            <UserIcon size={13} />
+                            <UserIcon size={13} color="#1a73e8" />
                             <span>Added by:</span>
                             <strong>{sp.addedBy || "Member"}</strong>
                           </span>
@@ -652,27 +651,29 @@ const Events = () => {
 
                       <div className="sponsor-right">
                         <span
-                          className={`status-pill status-${sp.status
-                            ?.toLowerCase()
+                          className={`status-pill status-${(sp.status || "Suggestion")
+                            .toLowerCase()
                             .replace(/\s+/g, "-")}`}
                         >
-                          {sp.status}
+                          {sp.status || "Suggestion"}
                         </span>
                         <div className="sponsor-item-actions">
                           <button
                             type="button"
                             onClick={() => handleEditSponsorInit(sp)}
                             title="Edit Sponsor"
+                            aria-label="Edit Sponsor"
                           >
-                            <Edit2 size={15} />
+                            <Edit2 size={15} color="#3c4043" />
                           </button>
                           <button
                             type="button"
                             className="delete"
                             onClick={() => handleDeleteSponsor(sp._id)}
                             title="Delete Sponsor"
+                            aria-label="Delete Sponsor"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={15} color="#ea4335" />
                           </button>
                         </div>
                       </div>

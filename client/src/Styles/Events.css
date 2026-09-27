@@ -223,7 +223,7 @@
 }
 
 .note-btn {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 6px;
   width: 28px;
@@ -507,23 +507,26 @@
   gap: 12px;
 }
 
-/* Fixed Sponsor Card Layout for Desktop */
+/* ========================================================
+   SPONSOR CARD: Guaranteed Desktop Visibility
+   ======================================================== */
 .sponsor-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
-  background: #f8f9fa;
-  border: 1px solid #e8eaed;
-  border-radius: 12px;
-  gap: 16px;
-  width: 100%;
-  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 14px 18px !important;
+  background: #f8f9fa !important;
+  border: 1px solid #e8eaed !important;
+  border-radius: 12px !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .sponsor-info {
-  flex: 1 1 auto;
-  min-width: 0; /* Prevents overflow from pushing out buttons */
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 .sponsor-info h4 {
@@ -544,7 +547,7 @@
 }
 
 .sponsor-contact {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
   word-break: break-all;
@@ -562,21 +565,30 @@
   color: #185abc;
 }
 
-/* Right Section: Badges & Buttons Guaranteed Visible */
+/* Right Section with Actions and Status Badge */
 .sponsor-right {
   display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
   gap: 12px !important;
-  flex-shrink: 0 !important;
-  min-width: fit-content !important;
+  flex: 0 0 auto !important;
   margin-left: auto !important;
+  min-width: fit-content !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
+/* Status Pill */
 .status-pill {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  min-width: 90px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 4px 10px !important;
+  border-radius: 14px !important;
+  white-space: nowrap !important;
+  min-width: 80px !important;
   text-align: center !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -588,7 +600,21 @@
 .status-rejected { background: #fce8e6; color: #c5221f; text-decoration: line-through; }
 .status-approved { background: #e6f4ea; color: #137333; }
 
+/* Buttons Container */
+.sponsor-item-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 .sponsor-item-actions button {
+  background: #ffffff !important;
+  border: 1px solid #dadce0 !important;
+  cursor: pointer;
+  padding: 6px !important;
+  border-radius: 6px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -596,38 +622,17 @@
   min-height: 28px !important;
   width: 28px !important;
   height: 28px !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.sponsor-item-actions svg {
-  display: block !important;
-  min-width: 15px !important;
-  min-height: 15px !important;
-  stroke: #5f6368 !important; /* Forces icon line color to show */
-}
-
-.sponsor-item-actions button {
-  background: #ffffff !important;
-  border: 1px solid #dadce0 !important;
-  cursor: pointer;
-  color: #5f6368;
-  padding: 6px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   transition: all 0.2s ease;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .sponsor-item-actions button:hover {
-  color: #202124;
   border-color: #bdc1c6 !important;
   background-color: #f1f3f4 !important;
 }
 
 .sponsor-item-actions button.delete:hover {
-  color: #ea4335;
   border-color: #fad2cf !important;
   background-color: #fce8e6 !important;
 }
@@ -753,17 +758,17 @@
   }
 
   .sponsor-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
   }
 
   .sponsor-right {
-    justify-content: space-between;
-    width: 100%;
-    border-top: 1px dashed #e0e4e8;
-    padding-top: 8px;
-    margin-left: 0;
+    justify-content: space-between !important;
+    width: 100% !important;
+    border-top: 1px dashed #e0e4e8 !important;
+    padding-top: 8px !important;
+    margin-left: 0 !important;
   }
 
   .sponsor-meta-row {
