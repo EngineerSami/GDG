@@ -9,6 +9,10 @@
   --danger-color: #ea4335;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .events-dashboard {
   min-height: 100vh;
   background-color: var(--bg-color);
@@ -26,6 +30,8 @@
   margin-bottom: 36px;
   border-bottom: 1px solid #e0e4e8;
   padding-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .events-header h1 {
@@ -36,6 +42,7 @@
 
 .header-tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -65,6 +72,47 @@
   color: #b06000;
 }
 
+.role-pill.organizer {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+/* Header layout & actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Organizer Campus Toggle Bar */
+.campus-toggle {
+  display: flex;
+  background: #e8eaed;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.campus-toggle button {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #5f6368;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.campus-toggle button.active {
+  background: #ffffff;
+  color: #202124;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .add-event-btn {
   background: var(--primary-green);
   color: #fff;
@@ -79,11 +127,34 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(15, 157, 88, 0.2);
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .add-event-btn:hover {
   background: var(--primary-hover);
   transform: translateY(-2px);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #dadce0;
+  color: #5f6368;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: #feebe8;
+  border-color: #ea4335;
+  color: #d93025;
 }
 
 /* Sticky Board Grid */
@@ -154,8 +225,8 @@
   background: rgba(255, 255, 255, 0.7);
   border: none;
   border-radius: 6px;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,17 +244,31 @@
   color: var(--danger-color);
 }
 
+.note-campus-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  color: #3c4043;
+}
+
 .note-title {
   font-size: 19px;
   font-weight: 700;
   margin-bottom: 10px;
   color: #202124;
+  word-break: break-word;
 }
 
 .note-desc {
   font-size: 14px;
   line-height: 1.5;
   color: #3c4043;
+  word-break: break-word;
 }
 
 .note-footer {
@@ -218,6 +303,7 @@
   align-items: center;
   justify-content: center;
   z-index: 99;
+  padding: 16px;
 }
 
 .modal-box {
@@ -227,12 +313,12 @@
   max-width: 480px;
   padding: 24px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-box.sponsors-modal {
   max-width: 750px;
-  max-height: 85vh;
-  overflow-y: auto;
 }
 
 .modal-header {
@@ -240,11 +326,13 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;
+  gap: 12px;
 }
 
 .modal-header h2 {
   font-size: 22px;
   font-weight: 700;
+  word-break: break-word;
 }
 
 .event-meta-info {
@@ -254,6 +342,7 @@
   align-items: center;
   gap: 6px;
   margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .close-btn {
@@ -261,6 +350,7 @@
   border: none;
   color: #5f6368;
   cursor: pointer;
+  padding: 4px;
 }
 
 .sponsor-event-desc {
@@ -295,7 +385,6 @@
   color: #3c4043;
 }
 
-/* Added select here */
 .form-group input,
 .form-group textarea,
 .form-group select {
@@ -315,7 +404,6 @@
   cursor: pointer;
 }
 
-/* Added select:focus here */
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
@@ -350,7 +438,7 @@
   color: #ffffff;
 }
 
-/* Sponsor Form & List */
+/* Sponsor Section */
 .section-title {
   display: flex;
   align-items: center;
@@ -381,6 +469,7 @@
   border: 1px solid #dadce0;
   font-size: 13px;
   outline: none;
+  width: 100%;
 }
 
 .add-sponsor-btn {
@@ -392,6 +481,7 @@
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .cancel-sponsor-btn {
@@ -401,6 +491,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .sponsors-list {
@@ -417,26 +508,48 @@
   background: #f8f9fa;
   border: 1px solid #e8eaed;
   border-radius: 10px;
+  gap: 12px;
 }
 
 .sponsor-info h4 {
   font-size: 14px;
   font-weight: 700;
+  word-break: break-word;
+}
+
+.sponsor-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #5f6368;
+  flex-wrap: wrap;
 }
 
 .sponsor-contact {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
-  color: #5f6368;
-  margin-top: 3px;
+  word-break: break-all;
+}
+
+.sponsor-added-by {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #1a73e8;
+}
+
+.sponsor-added-by strong {
+  font-weight: 600;
 }
 
 .sponsor-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 /* Sponsor Status Badges */
@@ -445,6 +558,7 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 14px;
+  white-space: nowrap;
 }
 
 .status-suggestion { background: #f1f3f4; color: #5f6368; }
@@ -482,101 +596,138 @@
   padding: 30px;
 }
 
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid #dadce0;
-  color: #5f6368;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-  background: #feebe8;
-  border-color: #ea4335;
-  color: #d93025;
-}
-
-/* 3-column role selector */
 .selectable-grid.role-grid {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
-/* Header layout & actions */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* ========================================================
+   RESPONSIVE DESIGN (Tablets & Mobile Screens)
+   ======================================================== */
+
+/* Tablets and small laptops (max 900px) */
+@media (max-width: 900px) {
+  .events-dashboard {
+    padding: 24px 20px;
+  }
+
+  .sponsor-inline-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sponsor-inline-form select {
+    grid-column: span 2;
+  }
+
+  .add-sponsor-btn,
+  .cancel-sponsor-btn {
+    grid-column: span 1;
+    padding: 10px;
+  }
 }
 
-/* Organizer Campus Toggle Bar */
-.campus-toggle {
-  display: flex;
-  background: #e8eaed;
-  border-radius: 8px;
-  padding: 3px;
-  gap: 2px;
-}
+/* Mobile Screens (max 640px) */
+@media (max-width: 640px) {
+  .events-dashboard {
+    padding: 16px 12px;
+  }
 
-.campus-toggle button {
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #5f6368;
-  transition: all 0.2s;
-}
+  .events-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
 
-.campus-toggle button.active {
-  background: #ffffff;
-  color: #202124;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+  .events-header h1 {
+    font-size: 22px;
+  }
 
-/* Organizer Badge */
-.role-pill.organizer {
-  background: #fce8e6;
-  color: #c5221f;
-}
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
 
-.note-campus-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.08);
-  padding: 2px 7px;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  color: #3c4043;
-}
+  .campus-toggle {
+    width: 100%;
+    justify-content: stretch;
+  }
 
-/* Added By label */
-.sponsor-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #5f6368;
-}
+  .campus-toggle button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 12px;
+  }
 
-.sponsor-added-by {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #1a73e8;
-}
+  .add-event-btn,
+  .logout-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
 
-.sponsor-added-by strong {
-  font-weight: 600;
+  /* Sticky notes full width on small screens */
+  .board-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .sticky-note {
+    transform: none !important; /* Disabling rotation on mobile for clean vertical alignment */
+  }
+
+  /* Modals */
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-box {
+    padding: 18px 16px;
+    border-radius: 12px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  /* Convert sponsor creation form to a simple vertical stack */
+  .sponsor-inline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sponsor-inline-form input,
+  .sponsor-inline-form select,
+  .add-sponsor-btn,
+  .cancel-sponsor-btn {
+    width: 100%;
+    padding: 11px;
+    font-size: 14px;
+  }
+
+  /* Sponsor item card layout */
+  .sponsor-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .sponsor-right {
+    justify-content: space-between;
+    width: 100%;
+    border-top: 1px dashed #e0e4e8;
+    padding-top: 8px;
+  }
+
+  .sponsor-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .selectable-grid.role-grid {
+    grid-template-columns: 1fr;
+  }
 }
