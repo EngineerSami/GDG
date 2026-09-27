@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import "../Styles/Events.css";
 import {
   Calendar,
@@ -19,7 +20,11 @@ import {
   User as UserIcon,
 } from "lucide-react";
 
-const API_BASE_URL = "https://gdg-a5ba.onrender.com/api/events";
+// Update this if you are using an environment variable like import.meta.env.VITE_API_URL
+const BACKEND_URL = "https://gdg-a5ba.onrender.com";
+const API_BASE_URL = `${BACKEND_URL}/api/events`;
+
+const socket = io(BACKEND_URL);
 
 const SPONSOR_STATUSES = [
   "Suggestion",
@@ -35,14 +40,14 @@ const Events = () => {
 
   const user = JSON.parse(
     localStorage.getItem("userData") ||
-      '{"fullName":"Guest","campus":"Ramallah","role":"Member"}'
+      '{"fullName":"Guest","campus":"Ramallah","role":"Member","status":"Approved"}'
   );
 
   const isOrganizer = user.role === "Organizer";
   const isLeader = user.role === "Leader";
   const hasEventAdminRights = isOrganizer || isLeader;
 
-  // Selected campus filter for Organizer
+  // Selected campus filter for Organizers
   const [organizerFilter, setOrganizerFilter] = useState("All");
 
   const [events, setEvents] = useState([]);
@@ -80,7 +85,7 @@ const Events = () => {
       } else {
         const activeCampus =
           campusName?.toLowerCase() === "jenin" ? "Jenin" : "Ramallah";
-        query = `?campus=${activeCampus}`;
+        query = `?campus=${activeCampus}&role=${user.role}`;
       }
 
       const response = await fetch(`${API_BASE_URL}${query}`);
@@ -96,19 +101,46 @@ const Events = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [campusName, isOrganizer, organizerFilter]);
+  }, [campusName, isOrganizer, organizerFilter, user.role]);
 
+  // Initial fetch and Real-time Socket.IO listeners
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]);
 
-  // Synchronize active modal with updated event list
-  useEffect(() => {
-    if (selectedEvent) {
-      const updated = events.find((ev) => ev._id === selectedEvent._id);
-      setSelectedEvent(updated || null);
-    }
-  }, [events]);
+    socket.on("event_created", (newEvent) => {
+      if (isOrganizer) {
+        if (organizerFilter === "All" || organizerFilter === newEvent.campus) {
+          setEvents((prev) => [newEvent, ...prev]);
+        }
+      } else {
+        const activeCampus =
+          campusName?.toLowerCase() === "jenin" ? "Jenin" : "Ramallah";
+        if (newEvent.campus === activeCampus) {
+          setEvents((prev) => [newEvent, ...prev]);
+        }
+      }
+    });
+
+    socket.on("event_updated", (updatedEvent) => {
+      setEvents((prev) =>
+        prev.map((ev) => (ev._id === updatedEvent._id ? updatedEvent : ev))
+      );
+      setSelectedEvent((curr) =>
+        curr && curr._id === updatedEvent._id ? updatedEvent : curr
+      );
+    });
+
+    socket.on("event_deleted", (deletedId) => {
+      setEvents((prev) => prev.filter((ev) => ev._id !== deletedId));
+      setSelectedEvent((curr) => (curr && curr._id === deletedId ? null : curr));
+    });
+
+    return () => {
+      socket.off("event_created");
+      socket.off("event_updated");
+      socket.off("event_deleted");
+    };
+  }, [fetchEvents, isOrganizer, organizerFilter, campusName]);
 
   const handleLogout = () => {
     localStorage.removeItem("userData");
@@ -132,7 +164,10 @@ const Events = () => {
         name: "",
         description: "",
         date: "",
-        campus: isOrganizer && organizerFilter !== "All" ? organizerFilter : user.campus,
+        campus:
+          isOrganizer && organizerFilter !== "All"
+            ? organizerFilter
+            : user.campus || "Ramallah",
       });
     }
     setIsEventModalOpen(true);
@@ -291,7 +326,7 @@ const Events = () => {
                 <span className="location-pill">
                   <MapPin size={14} /> {user.campus} Campus
                 </span>
-                <span className={`role-pill ${user.role.toLowerCase()}`}>
+                <span className={`role-pill ${user.role?.toLowerCase()}`}>
                   <UserCheck size={14} /> {user.role} View
                 </span>
               </>
@@ -330,7 +365,7 @@ const Events = () => {
               onClick={() => handleOpenEventModal()}
             >
               <Plus size={18} />
-              <span>Create Event</span>
+              <span>Create Sticky Note</span>
             </button>
           )}
 
@@ -356,7 +391,9 @@ const Events = () => {
         ) : events.length === 0 ? (
           <div className="empty-board">
             <p>No events found.</p>
-            {hasEventAdminRights && <span>Click "Create Event" to add one!</span>}
+            {hasEventAdminRights && (
+              <span>Click "Create Sticky Note" to add one!</span>
+            )}
           </div>
         ) : (
           <div className="board-grid">
@@ -414,6 +451,7 @@ const Events = () => {
         )}
       </main>
 
+      {/* MODAL 1: Create / Edit Event Note */}
       {isEventModalOpen && hasEventAdminRights && (
         <div className="modal-backdrop">
           <div className="modal-box">
@@ -441,6 +479,7 @@ const Events = () => {
                 />
               </div>
 
+              {/* Campus Selector for Organizers */}
               {isOrganizer && (
                 <div className="form-group">
                   <label>Campus</label>
@@ -497,6 +536,7 @@ const Events = () => {
         </div>
       )}
 
+      {/* MODAL 2: Sponsors Panel */}
       {selectedEvent && (
         <div className="modal-backdrop">
           <div className="modal-box sponsors-modal">
@@ -528,6 +568,7 @@ const Events = () => {
                 </span>
               </div>
 
+              {/* Add / Edit Sponsor Form */}
               <form onSubmit={handleSaveSponsor} className="sponsor-inline-form">
                 <input
                   type="text"
@@ -594,15 +635,16 @@ const Events = () => {
                         <h4>{sp.name}</h4>
                         <div className="sponsor-meta-row">
                           <span className="sponsor-contact">
-                            {sp.contact.includes("@") ? (
-                              <Mail size={12} />
+                            {sp.contact?.includes("@") ? (
+                              <Mail size={13} />
                             ) : (
-                              <Phone size={12} />
+                              <Phone size={13} />
                             )}
                             {sp.contact}
                           </span>
                           <span className="sponsor-added-by">
-                            <UserIcon size={12} /> Added by:{" "}
+                            <UserIcon size={13} />
+                            <span>Added by:</span>
                             <strong>{sp.addedBy || "Member"}</strong>
                           </span>
                         </div>
@@ -611,7 +653,7 @@ const Events = () => {
                       <div className="sponsor-right">
                         <span
                           className={`status-pill status-${sp.status
-                            .toLowerCase()
+                            ?.toLowerCase()
                             .replace(/\s+/g, "-")}`}
                         >
                           {sp.status}
@@ -622,7 +664,7 @@ const Events = () => {
                             onClick={() => handleEditSponsorInit(sp)}
                             title="Edit Sponsor"
                           >
-                            <Edit2 size={14} />
+                            <Edit2 size={15} />
                           </button>
                           <button
                             type="button"
@@ -630,7 +672,7 @@ const Events = () => {
                             onClick={() => handleDeleteSponsor(sp._id)}
                             title="Delete Sponsor"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </div>

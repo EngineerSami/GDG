@@ -219,7 +219,7 @@
   right: 10px;
   display: flex;
   gap: 6px;
-  z-index: 20; /* Ensures buttons sit above text and note cards */
+  z-index: 20;
 }
 
 .note-btn {
@@ -324,7 +324,7 @@
 }
 
 .modal-box.sponsors-modal {
-  max-width: 750px;
+  max-width: 760px;
 }
 
 .modal-header {
@@ -476,6 +476,7 @@
   font-size: 13px;
   outline: none;
   width: 100%;
+  background: #fff;
 }
 
 .add-sponsor-btn {
@@ -503,23 +504,33 @@
 .sponsors-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
+/* Fixed Sponsor Card Layout for Desktop */
 .sponsor-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
+  padding: 14px 18px;
   background: #f8f9fa;
   border: 1px solid #e8eaed;
-  border-radius: 10px;
-  gap: 12px;
+  border-radius: 12px;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sponsor-info {
+  flex: 1 1 auto;
+  min-width: 0; /* Prevents overflow from pushing out buttons */
 }
 
 .sponsor-info h4 {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #202124;
   word-break: break-word;
 }
 
@@ -527,7 +538,6 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-top: 4px;
   font-size: 12px;
   color: #5f6368;
   flex-wrap: wrap;
@@ -541,7 +551,7 @@
 }
 
 .sponsor-added-by {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   color: #1a73e8;
@@ -549,13 +559,16 @@
 
 .sponsor-added-by strong {
   font-weight: 600;
+  color: #185abc;
 }
 
+/* Right Section: Badges & Buttons Guaranteed Visible */
 .sponsor-right {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 12px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 /* Sponsor Status Badges */
@@ -574,24 +587,34 @@
 .status-approved { background: #e6f4ea; color: #137333; }
 
 .sponsor-item-actions {
-  display: flex;
-  gap: 6px;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
 }
 
 .sponsor-item-actions button {
-  background: transparent;
-  border: none;
+  background: #ffffff !important;
+  border: 1px solid #dadce0 !important;
   cursor: pointer;
   color: #5f6368;
-  padding: 4px;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .sponsor-item-actions button:hover {
-  color: var(--dark-text);
+  color: #202124;
+  border-color: #bdc1c6 !important;
+  background-color: #f1f3f4 !important;
 }
 
 .sponsor-item-actions button.delete:hover {
-  color: var(--danger-color);
+  color: #ea4335;
+  border-color: #fad2cf !important;
+  background-color: #fce8e6 !important;
 }
 
 .empty-board,
@@ -602,15 +625,20 @@
   padding: 30px;
 }
 
-.selectable-grid.role-grid {
-  grid-template-columns: 1fr 1fr 1fr;
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ========================================================
    RESPONSIVE DESIGN (Tablets & Mobile Screens)
    ======================================================== */
 
-/* Tablets and small laptops (max 900px) */
 @media (max-width: 900px) {
   .events-dashboard {
     padding: 24px 20px;
@@ -631,7 +659,6 @@
   }
 }
 
-/* Mobile Screens (max 640px) */
 @media (max-width: 640px) {
   .events-dashboard {
     padding: 16px 12px;
@@ -673,17 +700,15 @@
     padding: 12px;
   }
 
-  /* Sticky notes full width on small screens */
   .board-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
 
   .sticky-note {
-    transform: none !important; /* Disabling rotation on mobile for clean vertical alignment */
+    transform: none !important;
   }
 
-  /* Modals */
   .modal-backdrop {
     padding: 10px;
   }
@@ -697,7 +722,6 @@
     font-size: 18px;
   }
 
-  /* Convert sponsor creation form to a simple vertical stack */
   .sponsor-inline-form {
     display: flex;
     flex-direction: column;
@@ -713,7 +737,6 @@
     font-size: 14px;
   }
 
-  /* Sponsor item card layout */
   .sponsor-card {
     flex-direction: column;
     align-items: stretch;
@@ -725,15 +748,12 @@
     width: 100%;
     border-top: 1px dashed #e0e4e8;
     padding-top: 8px;
+    margin-left: 0;
   }
 
   .sponsor-meta-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
-  }
-
-  .selectable-grid.role-grid {
-    grid-template-columns: 1fr;
   }
 }
