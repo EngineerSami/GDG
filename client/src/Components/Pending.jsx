@@ -27,7 +27,7 @@ const Pending = () => {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/users/${parsed._id}/status`);
+        const res = await fetch(`https://gdg-a5ba.onrender.com/api/users/${parsed._id}/status`);
         const result = await res.json();
 
         if (res.ok && result.data) {

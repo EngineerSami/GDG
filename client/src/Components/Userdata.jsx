@@ -52,7 +52,7 @@ const Userdata = () => {
       setIsSubmitting(true);
       setError("");
 
-      const res = await fetch("http://localhost:5000/api/users", {
+      const res = await fetch("https://gdg-a5ba.onrender.com/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName: fullName.trim() }),

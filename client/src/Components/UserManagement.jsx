@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import "../Styles/UserManagement.css";
 
-const API_BASE_URL = "http://localhost:5000/api/users";
+const API_BASE_URL = "https://gdg-a5ba.onrender.com/api/users";
 
 const UserManagement = () => {
   const navigate = useNavigate();

@@ -19,7 +19,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:5000/api/events";
+const API_BASE_URL = "https://gdg-a5ba.onrender.com/api/events";
 
 const SPONSOR_STATUSES = [
   "Suggestion",
