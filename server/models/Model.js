@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema(
       required: [true, "Full name is required"],
       trim: true,
     },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      trim: true,
+    },
     campus: {
       type: String,
       enum: ["Ramallah", "Jenin", ""],
@@ -126,9 +131,9 @@ const messageSchema = new mongoose.Schema(
   }
 );
 
-const Message = mongoose.model("Message", messageSchema);
 const User = mongoose.model("User", userSchema);
 const Event = mongoose.model("Event", eventSchema);
+const Message = mongoose.model("Message", messageSchema);
 
 module.exports = {
   User,

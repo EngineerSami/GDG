@@ -32,9 +32,11 @@ const getCampusMessages = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
+// @desc    Register or Log In using Full Name + Plaintext Password
+// @route   POST /api/users
 const saveUserData = async (req, res) => {
   try {
-    const { fullName } = req.body;
+    const { fullName, password } = req.body;
 
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({
@@ -43,26 +45,57 @@ const saveUserData = async (req, res) => {
       });
     }
 
-
+    if (!password || !password.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
 
     const trimmedName = fullName.trim();
+    const trimmedPassword = password.trim();
 
     // Check if user already exists
     let user = await User.findOne({
       fullName: { $regex: new RegExp(`^${trimmedName}$`, "i") },
     });
 
-    if (!user) {
-      // First time registration: Set as Pending
-      user = await User.create({
-        fullName: trimmedName,
-        status: "Pending",
-        campus: "",
-        role: "",
+    if (user) {
+      // Existing user: check plain-text password match
+      if (user.password && user.password !== trimmedPassword) {
+        return res.status(401).json({
+          success: false,
+          message: "Incorrect password. Please try again.",
+        });
+      }
+
+      // If user had no password set previously (from old tests), set it now
+      if (!user.password) {
+        user.password = trimmedPassword;
+        await user.save();
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: user,
       });
     }
 
-    return res.status(200).json({
+    // New user registration
+    user = await User.create({
+      fullName: trimmedName,
+      password: trimmedPassword,
+      status: "Pending",
+      campus: "",
+      role: "",
+    });
+
+    // Notify admin dashboard in real-time
+    if (req.io) {
+      req.io.emit("user_created", user);
+    }
+
+    return res.status(201).json({
       success: true,
       data: user,
     });

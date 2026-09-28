@@ -292,3 +292,29 @@ body {
   border-color: #d93025 !important;
   background-color: #fff8f7;
 }
+
+.password-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: #202124;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #d93025;
+  font-size: 13px;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
