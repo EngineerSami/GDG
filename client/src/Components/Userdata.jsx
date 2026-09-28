@@ -109,7 +109,7 @@ const Userdata = () => {
               <User className="field-icon" size={19} />
               <input
                 type="text"
-                placeholder="e.g. Ahmad Salameh"
+                placeholder="e.g. John Doe"
                 value={fullName}
                 onChange={(e) => {
                   setFullName(e.target.value);
