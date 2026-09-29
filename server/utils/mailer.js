@@ -3,23 +3,29 @@ const nodemailer = require("nodemailer");
 console.log("Initializing Nodemailer with user:", process.env.EMAIL_USER ? "EXISTS" : "MISSING");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // Port 587 uses STARTTLS
+  family: 4,     // CRITICAL: Forces IPv4 to bypass Render's ENETUNREACH IPv6 issue
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  // Prevent hanging on cloud providers
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  tls: {
+    rejectUnauthorized: false, // Prevents self-signed cert dropouts on cloud hosts
+  },
+  pool: true,
+  maxConnections: 3,
+  connectionTimeout: 8000,
+  greetingTimeout: 8000,
+  socketTimeout: 10000,
 });
 
-// Verify SMTP connection immediately upon server boot
-transporter.verify((err, success) => {
+transporter.verify((err) => {
   if (err) {
-    console.error("❌ SMTP Connection verification failed:", err.message);
+    console.error("❌ SMTP Verification Error:", err.message);
   } else {
-    console.log("✅ SMTP Server is ready to take messages");
+    console.log("✅ SMTP Server ready on Port 587 (IPv4)");
   }
 });
 
