@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import ChatWidget from "./ChatWidget";
 import "../Styles/Events.css";
 import {
@@ -21,7 +19,6 @@ import {
   Crown,
   LogOut,
   User as UserIcon,
-  Download,
 } from "lucide-react";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
@@ -148,181 +145,6 @@ const Events = () => {
   const handleLogout = () => {
     localStorage.removeItem("userData");
     navigate("/", { replace: true });
-  };
-
-  // Styled Excel Export using ExcelJS
-  const handleExportToExcel = async () => {
-    if (!events || events.length === 0) {
-      alert("No events available to export.");
-      return;
-    }
-
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = "GDG AAUP PR Team";
-    workbook.created = new Date();
-
-    const worksheet = workbook.addWorksheet("Community Events", {
-      views: [{ showGridLines: true }],
-    });
-
-    worksheet.columns = [
-      { key: "col1", width: 16 },
-      { key: "col2", width: 34 },
-      { key: "col3", width: 44 },
-      { key: "col4", width: 22 },
-      { key: "col5", width: 26 },
-      { key: "col6", width: 24 },
-    ];
-
-    const getStatusFill = (status) => {
-      switch (status) {
-        case "Approved":
-          return { type: "pattern", pattern: "solid", fgColor: { argb: "E6F4EA" } };
-        case "Awaiting Response":
-          return { type: "pattern", pattern: "solid", fgColor: { argb: "FEF7E0" } };
-        case "Rejected":
-        case "No Response":
-          return { type: "pattern", pattern: "solid", fgColor: { argb: "FCE8E6" } };
-        default:
-          return { type: "pattern", pattern: "solid", fgColor: { argb: "F1F3F4" } };
-      }
-    };
-
-    const getStatusFontColor = (status) => {
-      switch (status) {
-        case "Approved": return "137333";
-        case "Awaiting Response": return "B06000";
-        case "Rejected":
-        case "No Response": return "C5221F";
-        default: return "5F6368";
-      }
-    };
-
-    // 1. Title Banner
-    const titleRow = worksheet.addRow(["GDG AAUP — Events & Sponsorship Management"]);
-    worksheet.mergeCells("A1:F1");
-    titleRow.height = 34;
-    titleRow.getCell(1).font = { name: "Segoe UI", size: 15, bold: true, color: { argb: "FFFFFF" } };
-    titleRow.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "202124" } };
-    titleRow.getCell(1).alignment = { vertical: "middle", indent: 1 };
-
-    // 2. Subtitle Metadata
-    const label = isOrganizer ? `Campus: ${organizerFilter}` : `Campus: ${user.campus}`;
-    const subRow = worksheet.addRow([
-      `${label}  |  Exported: ${new Date().toLocaleDateString()} by ${user.fullName || "User"}`,
-    ]);
-    worksheet.mergeCells("A2:F2");
-    subRow.height = 20;
-    subRow.getCell(1).font = { name: "Segoe UI", size: 10, italic: true, color: { argb: "5F6368" } };
-    subRow.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "F8F9FA" } };
-    subRow.getCell(1).alignment = { vertical: "middle", indent: 1 };
-
-    worksheet.addRow([]); // Blank spacer
-
-    // 3. Render Events and Nested Sponsors
-    events.forEach((ev) => {
-      // Event Header Row
-      const evRow = worksheet.addRow([
-        ev.campus.toUpperCase(),
-        ev.name,
-        ev.description,
-        ev.date ? `📅 ${ev.date}` : "Date Unspecified",
-        "",
-        `${ev.sponsors?.length || 0} Sponsor(s)`,
-      ]);
-      evRow.height = 26;
-
-      for (let c = 1; c <= 6; c++) {
-        const cell = evRow.getCell(c);
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "0F9D58" } };
-        cell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FFFFFF" } };
-        cell.alignment = { vertical: "middle" };
-        cell.border = {
-          top: { style: "thin", color: { argb: "0B8043" } },
-          bottom: { style: "thin", color: { argb: "0B8043" } },
-        };
-      }
-
-      // Sponsor Sub-rows
-      if (ev.sponsors && ev.sponsors.length > 0) {
-        const subHeaderRow = worksheet.addRow([
-          "",
-          "Sponsor Organization",
-          "",
-          "Status",
-          "Contact",
-          "Added By",
-        ]);
-        subHeaderRow.height = 20;
-
-        for (let c = 1; c <= 6; c++) {
-          const cell = subHeaderRow.getCell(c);
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "E8F0FE" } };
-          cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "1A73E8" } };
-          cell.alignment = { vertical: "middle" };
-        }
-
-        ev.sponsors.forEach((sp, idx) => {
-          const isEven = idx % 2 === 0;
-          const rowBg = isEven ? "FFFFFF" : "F9FBFD";
-
-          const spRow = worksheet.addRow([
-            "",
-            `  • ${sp.name}`,
-            "",
-            sp.status || "Suggestion",
-            sp.contact || "-",
-            sp.addedBy || "Member",
-          ]);
-          spRow.height = 22;
-
-          for (let c = 1; c <= 6; c++) {
-            const cell = spRow.getCell(c);
-            cell.font = { name: "Segoe UI", size: 10, color: { argb: "202124" } };
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
-            cell.alignment = { vertical: "middle" };
-            cell.border = {
-              bottom: { style: "thin", color: { argb: "E0E4E8" } },
-            };
-          }
-
-          const statusCell = spRow.getCell(4);
-          statusCell.fill = getStatusFill(sp.status);
-          statusCell.font = {
-            name: "Segoe UI",
-            size: 9.5,
-            bold: true,
-            color: { argb: getStatusFontColor(sp.status) },
-          };
-          statusCell.alignment = { vertical: "middle", horizontal: "center" };
-        });
-      } else {
-        const emptyRow = worksheet.addRow([
-          "",
-          "   (No sponsors recorded yet)",
-          "",
-          "-",
-          "-",
-          "-",
-        ]);
-        emptyRow.height = 20;
-        for (let c = 1; c <= 6; c++) {
-          const cell = emptyRow.getCell(c);
-          cell.font = { name: "Segoe UI", size: 9.5, italic: true, color: { argb: "80868B" } };
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF" } };
-          cell.alignment = { vertical: "middle" };
-        }
-      }
-
-      worksheet.addRow([]); // Blank spacer between events
-    });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const dateStamp = new Date().toISOString().split("T")[0];
-    const activeLabel = isOrganizer ? organizerFilter : user.campus;
-    const fileName = `GDG_AAUP_Events_${activeLabel}_${dateStamp}.xlsx`;
-
-    saveAs(new Blob([buffer]), fileName);
   };
 
   // Event handlers
@@ -543,16 +365,6 @@ const Events = () => {
             </div>
           )}
 
-          {/* Styled Excel Export Button */}
-          <button
-            className="export-excel-btn"
-            onClick={handleExportToExcel}
-            title="Export Events & Sponsors to Excel"
-          >
-            <Download size={16} />
-            <span>Export Excel</span>
-          </button>
-
           {hasEventAdminRights && (
             <button
               className="add-event-btn"
@@ -722,7 +534,7 @@ const Events = () => {
                   Cancel
                 </button>
                 <button type="submit" className="save-btn">
-                  {editingEvent ? "Update Event" : "Pin Event"}
+                  {editingEvent ? "Update Sticky" : "Pin Event"}
                 </button>
               </div>
             </form>

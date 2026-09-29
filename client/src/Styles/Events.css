@@ -640,38 +640,6 @@
   }
 }
 
-.export-excel-btn {
-  background: #ffffff;
-  color: #137333;
-  border: 1px solid #ceead6;
-  padding: 9px 15px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 13.5px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.export-excel-btn:hover {
-  background: #e6f4ea;
-  border-color: #137333;
-  transform: translateY(-1px);
-}
-
-/* Ensure full width in mobile header */
-@media (max-width: 640px) {
-  .export-excel-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 11px;
-  }
-}
-
 /* ========================================================
    RESPONSIVE DESIGN (Tablets & Mobile Screens)
    ======================================================== */
