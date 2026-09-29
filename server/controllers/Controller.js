@@ -136,6 +136,7 @@ const getAllUsers = async (req, res) => {
 
 // @desc    Approve/Update user campus and role
 // @route   PUT /api/users/:id
+// PUT /api/users/:id
 const updateUser = async (req, res) => {
   try {
     const { campus, role, status } = req.body;
@@ -152,6 +153,7 @@ const updateUser = async (req, res) => {
 
     await user.save();
 
+    // Broadcast update so Pending.jsx can catch it
     if (req.io) {
       req.io.emit("user_updated", user);
     }
