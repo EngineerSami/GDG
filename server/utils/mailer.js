@@ -1,57 +1,103 @@
+
 const nodemailer = require("nodemailer");
-const dns = require("node:dns");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  lookup: (hostname, options, callback) => {
-    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-      callback(err, address, family);
-    });
-  },
-  tls: {
-    rejectUnauthorized: false,
-    servername: "smtp.gmail.com",
-  },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-  socketTimeout: 5000,
+  connectionTimeout: 20000,
 });
 
-const sendNewEventNotification = async (recipientEmails, eventDetails) => {
+transporter.verify()
+  .then(() => {
+    console.log("✅ Gmail SMTP connection successful");
+  })
+  .catch((err) => {
+    console.error("❌ Gmail SMTP error:", err.code, err.message);
+  });
+const createTransporter = () => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn("⚠️ EMAIL_USER or EMAIL_PASS missing. Skipping email notification.");
+    throw new Error("EMAIL_USER or EMAIL_PASS is missing");
+  }
+
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000,
+  });
+};
+
+const sendNewEventNotification = async (
+  recipientEmails,
+  eventDetails
+) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("Email credentials are missing. Skipping notifications.");
     return;
   }
 
+  const transporter = createTransporter();
+
   const { name, description, date, campus } = eventDetails;
+
+  // Check the SMTP connection before sending
+  await transporter.verify();
 
   for (const email of recipientEmails) {
     try {
-      console.log(`⏳ Attempting to send email to: ${email}...`);
+      console.log(`Attempting to send email to: ${email}`);
+
       const info = await transporter.sendMail({
         from: `"GDG AAUP PR Team" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: `🚀 New Event: ${name} (${campus} Campus)`,
+        subject: `New Event: ${name} (${campus} Campus)`,
+
+        text: `
+New Campus Event: ${name}
+Campus: ${campus}
+Date: ${date || "Unspecified"}
+
+${description}
+        `,
+
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #202124;">
-            <h2 style="color: #0F9D58;">New Campus Event: ${name}</h2>
+            <h2 style="color: #0F9D58;">
+              New Campus Event: ${name}
+            </h2>
             <p><strong>Campus:</strong> ${campus}</p>
             <p><strong>Date:</strong> ${date || "Unspecified"}</p>
             <p>${description}</p>
           </div>
         `,
       });
-      console.log(`✅ Sent successfully to ${email} (MessageId: ${info.messageId})`);
+
+      console.log(
+        `Email sent to ${email}. Message ID: ${info.messageId}`
+      );
     } catch (err) {
-      console.error(`❌ Failed sending to ${email}:`, err.message);
+      console.error(
+        `Failed to send email to ${email}:`,
+        err.code || "",
+        err.message
+      );
     }
   }
+
+  transporter.close();
 };
 
 module.exports = { sendNewEventNotification };
