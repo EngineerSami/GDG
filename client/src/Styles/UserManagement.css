@@ -1,169 +1,248 @@
-.management-wrapper {
+.user-management-container {
+  padding: 32px 40px;
+  background-color: #f7f9fc;
   min-height: 100vh;
-  background: #f8fafc;
-  padding: 32px 48px;
   font-family: "Plus Jakarta Sans", sans-serif;
+  color: #202124;
 }
 
-.management-header {
+.um-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
-}
-
-.title-section {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
+  margin-bottom: 24px;
 }
 
-.back-btn {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #3c4043;
-}
-
-.title-section h1 {
+.um-header h2 {
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin: 0 0 6px 0;
 }
 
-.title-section p {
+.um-header p {
   font-size: 13.5px;
-  color: #64748b;
+  color: #5f6368;
+  margin: 0;
 }
 
-.stats-pill {
+.um-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-box {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  padding: 8px 16px;
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #5f6368;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  font-family: inherit;
+  width: 200px;
+}
+
+.status-tabs {
+  display: flex;
+  background: #e8eaed;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.status-tabs button {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
   font-size: 13px;
   font-weight: 600;
+  color: #5f6368;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.table-card {
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+.status-tabs button.active {
+  background: #ffffff;
+  color: #202124;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Card & Table */
+.um-table-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e0e4e8;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.users-table {
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.um-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
 
-.users-table th {
-  background: #f8fafc;
-  padding: 14px 20px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.users-table td {
+.um-table thead th {
+  background: #fdfdfd;
+  border-bottom: 1px solid #e8eaed;
   padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5f6368;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.um-table tbody tr {
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.15s;
+}
+
+.um-table tbody tr:hover {
+  background-color: #fafbfc;
+}
+
+.um-table tbody tr.row-pending {
+  background-color: #fffdf5; /* Warm light yellow tone for pending items */
+}
+
+.um-table tbody td {
+  padding: 16px 20px;
   font-size: 14px;
+  vertical-align: middle;
 }
 
-.row-pending {
-  background: #fffdf5;
-}
-
-.user-name-cell {
+/* User Name Column */
+.user-name-col {
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
 
-.join-date {
-  font-size: 11.5px;
-  color: #94a3b8;
-  margin-top: 2px;
+.user-fullname {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #202124;
 }
 
-.status-tag {
+.user-email {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 14px;
+  color: #5f6368;
 }
 
-.status-tag.pending {
-  background: #fef7e0;
+.user-joined-date {
+  font-size: 12px;
+  color: #80868b;
+}
+
+/* Status Pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.status-pill.pending {
+  background-color: #fef7e0;
   color: #b06000;
 }
 
-.status-tag.approved {
-  background: #e6f4ea;
+.status-pill.approved {
+  background-color: #e6f4ea;
   color: #137333;
 }
 
-.select-box {
-  padding: 8px 12px;
+/* Dropdown Selects */
+.um-select {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
   border-radius: 8px;
-  border: 1.5px solid #cbd5e1;
-  background: #fff;
-  font-size: 13px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  color: #202124;
   font-family: inherit;
-  color: #1e293b;
   outline: none;
+  cursor: pointer;
+  min-width: 170px;
+  transition: border-color 0.15s;
 }
 
-.select-box:focus {
+.um-select:focus {
   border-color: #0f9d58;
 }
 
-.action-buttons {
+/* Action Buttons */
+.um-actions-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.delete-user-btn {
+.action-btn {
   background: transparent;
-  border: none;
-  color: #94a3b8;
+  border: 1px solid transparent;
   cursor: pointer;
-  padding: 6px;
+  padding: 7px;
   border-radius: 6px;
-  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  color: #5f6368;
 }
 
-.delete-user-btn:hover {
-  color: #ef4444;
-  background: #fee2e2;
+.action-btn.approve {
+  background: #e6f4ea;
+  color: #137333;
+  border-color: #ceead6;
 }
 
-.center-loader {
+.action-btn.approve:hover {
+  background: #0f9d58;
+  color: #ffffff;
+}
+
+.action-btn.delete:hover {
+  background: #feebe8;
+  color: #ea4335;
+  border-color: #fad2cf;
+}
+
+.um-loading,
+.um-empty {
+  text-align: center;
+  padding: 48px;
+  color: #5f6368;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 60px;
-  gap: 12px;
-  color: #64748b;
+  gap: 10px;
 }
 
 .spinner {
@@ -171,5 +250,7 @@
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }

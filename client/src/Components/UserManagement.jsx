@@ -1,195 +1,368 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { io } from "socket.io-client";
 import {
-  Users,
-  ShieldCheck,
-  MapPin,
+  Check,
   Trash2,
-  CheckCircle,
   Clock,
-  ArrowLeft,
+  CheckCircle2,
+  Users,
+  Search,
   Loader2,
-  Crown,
+  AlertCircle,
+  Mail,
 } from "lucide-react";
 import "../Styles/UserManagement.css";
 
-const API_BASE_URL = "https://gdg-a5ba.onrender.com/api/users";
+const BACKEND_URL = "https://gdg-a5ba.onrender.com";
+const API_BASE_URL = `${BACKEND_URL}/api/users`;
+
+const socket = io(BACKEND_URL);
+
+const CAMPUS_OPTIONS = ["Ramallah", "Jenin"];
+const ROLE_OPTIONS = [
+  { label: "Member", value: "Member" },
+  { label: "Leader", value: "Leader" },
+  { label: "Organizer (All Access)", value: "Organizer" },
+];
 
 const UserManagement = () => {
-  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  const fetchUsers = async () => {
+  // Fetch all users
+  const fetchUsers = useCallback(async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      setErrorMessage("");
+
       const res = await fetch(API_BASE_URL);
-      const result = await res.json();
+      const data = await res.json();
+
       if (res.ok) {
-        setUsers(result.data || []);
+        setUsers(data.data || []);
+      } else {
+        setErrorMessage(data.message || "Failed to load user list");
       }
     } catch (err) {
-      alert("Error loading users");
+      setErrorMessage("Network error: Backend server unreachable");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchUsers();
   }, []);
 
-  const handleUpdate = async (id, fields) => {
+  // Socket.IO real-time sync
+  useEffect(() => {
+    fetchUsers();
+
+    socket.on("user_created", (newUser) => {
+      setUsers((prev) => [newUser, ...prev]);
+    });
+
+    socket.on("user_updated", (updatedUser) => {
+      setUsers((prev) =>
+        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u))
+      );
+    });
+
+    socket.on("user_deleted", (deletedId) => {
+      setUsers((prev) => prev.filter((u) => u._id !== deletedId));
+    });
+
+    return () => {
+      socket.off("user_created");
+      socket.off("user_updated");
+      socket.off("user_deleted");
+    };
+  }, [fetchUsers]);
+
+  // Update Campus, Role, and auto-approve if both are configured
+  const handleUserFieldChange = async (userId, field, value) => {
     try {
-      setSavingId(id);
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
+      setActionLoadingId(userId);
+
+      const currentUser = users.find((u) => u._id === userId);
+      if (!currentUser) return;
+
+      const payload = {
+        campus: field === "campus" ? value : currentUser.campus,
+        role: field === "role" ? value : currentUser.role,
+      };
+
+      // Auto-approve if both campus and role are now assigned
+      if (payload.campus && payload.role && currentUser.status === "Pending") {
+        payload.status = "Approved";
+      }
+
+      const res = await fetch(`${API_BASE_URL}/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
+        body: JSON.stringify(payload),
       });
-      const result = await res.json();
+
+      const data = await res.json();
       if (res.ok) {
         setUsers((prev) =>
-          prev.map((u) => (u._id === id ? result.data : u))
+          prev.map((u) => (u._id === userId ? data.data : u))
         );
       } else {
-        alert(result.message || "Failed to update");
+        alert(data.message || "Failed to update user");
       }
     } catch (err) {
-      alert("Error saving update");
+      alert("Error contacting server");
     } finally {
-      setSavingId(null);
+      setActionLoadingId(null);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+  // Explicit Approve Handler
+  const handleApproveUser = async (user) => {
+    if (!user.campus || !user.role) {
+      alert("Please assign both an Assigned Campus and an Assigned Rank / Role first.");
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
+      setActionLoadingId(user._id);
+
+      const res = await fetch(`${API_BASE_URL}/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Approved" }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((u) => (u._id === user._id ? data.data : u))
+        );
+      } else {
+        alert(data.message || "Failed to approve user");
+      }
+    } catch (err) {
+      alert("Error contacting server");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Reject / Delete user
+  const handleDeleteUser = async (userId, userName) => {
+    if (!window.confirm(`Permanently remove ${userName || "this user"}?`)) return;
+
+    try {
+      setActionLoadingId(userId);
+
+      const res = await fetch(`${API_BASE_URL}/${userId}`, {
         method: "DELETE",
       });
+
+      const data = await res.json();
       if (res.ok) {
-        setUsers((prev) => prev.filter((u) => u._id !== id));
+        setUsers((prev) => prev.filter((u) => u._id !== userId));
+      } else {
+        alert(data.message || "Failed to remove user");
       }
     } catch (err) {
-      alert("Error deleting user");
+      alert("Error contacting server");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
+  // Filtering
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "All" || u.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
-    <div className="management-wrapper">
-      <header className="management-header">
-        <div className="title-section">
-          <button className="back-btn" onClick={() => navigate(-1)}>
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1>Member Identification & Permissions</h1>
-            <p>Review users, identify their campus, and assign their ranks</p>
+    <div className="user-management-container">
+      {/* Top Banner & Stats */}
+      <div className="um-header">
+        <div>
+          <h2>User Administration</h2>
+          <p>Review new join requests, grant campus roles, and manage permissions.</p>
+        </div>
+
+        <div className="um-filters">
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="status-tabs">
+            {["All", "Pending", "Approved"].map((st) => (
+              <button
+                key={st}
+                className={statusFilter === st ? "active" : ""}
+                onClick={() => setStatusFilter(st)}
+              >
+                {st}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        <div className="stats-pill">
-          <Users size={16} />
-          <span>Total: {users.length} Users</span>
-        </div>
-      </header>
+      {/* Main Table Card */}
+      <div className="um-table-card">
+        {isLoading ? (
+          <div className="um-loading">
+            <Loader2 className="spinner" size={30} />
+            <p>Loading members...</p>
+          </div>
+        ) : errorMessage ? (
+          <div className="um-empty">
+            <AlertCircle size={32} color="#ea4335" />
+            <p>{errorMessage}</p>
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="um-empty">
+            <Users size={32} color="#9aa0a6" />
+            <p>No users found matching your filters.</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="um-table">
+              <thead>
+                <tr>
+                  <th>FULL NAME</th>
+                  <th>STATUS</th>
+                  <th>ASSIGNED CAMPUS</th>
+                  <th>ASSIGNED RANK / ROLE</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u) => {
+                  const isPending = u.status === "Pending";
+                  const isActionLoading = actionLoadingId === u._id;
 
-      {loading ? (
-        <div className="center-loader">
-          <Loader2 className="spinner" size={36} />
-          <p>Loading members...</p>
-        </div>
-      ) : (
-        <div className="table-card">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Full Name</th>
-                <th>Status</th>
-                <th>Assigned Campus</th>
-                <th>Assigned Rank / Role</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => {
-                const isPending = u.status === "Pending";
-                return (
-                  <tr key={u._id} className={isPending ? "row-pending" : ""}>
-                    <td className="user-name-cell">
-                      <strong>{u.fullName}</strong>
-                      <span className="join-date">
-                        Joined {new Date(u.createdAt).toLocaleDateString()}
-                      </span>
-                    </td>
+                  return (
+                    <tr key={u._id} className={isPending ? "row-pending" : ""}>
+                      {/* FULL NAME + JOIN DATE + EMAIL */}
+                      <td>
+                        <div className="user-name-col">
+                          <strong className="user-fullname">{u.fullName}</strong>
+                          {u.email && (
+                            <span className="user-email">
+                              <Mail size={12} />
+                              {u.email}
+                            </span>
+                          )}
+                          <span className="user-joined-date">
+                            Joined{" "}
+                            {new Date(u.createdAt || Date.now()).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </td>
 
-                    <td>
-                      <span className={`status-tag ${u.status.toLowerCase()}`}>
-                        {isPending ? (
-                          <Clock size={12} />
-                        ) : (
-                          <CheckCircle size={12} />
-                        )}
-                        {u.status}
-                      </span>
-                    </td>
+                      {/* STATUS */}
+                      <td>
+                        <span className={`status-pill ${isPending ? "pending" : "approved"}`}>
+                          {isPending ? (
+                            <>
+                              <Clock size={13} /> Pending
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={13} /> Approved
+                            </>
+                          )}
+                        </span>
+                      </td>
 
-                    <td>
-                      <select
-                        className="select-box"
-                        value={u.campus || ""}
-                        onChange={(e) =>
-                          handleUpdate(u._id, { campus: e.target.value })
-                        }
-                      >
-                        <option value="" disabled>
-                          Select Campus...
-                        </option>
-                        <option value="Ramallah">Ramallah</option>
-                        <option value="Jenin">Jenin</option>
-                      </select>
-                    </td>
-
-                    <td>
-                      <select
-                        className="select-box"
-                        value={u.role || ""}
-                        onChange={(e) =>
-                          handleUpdate(u._id, { role: e.target.value })
-                        }
-                      >
-                        <option value="" disabled>
-                          Select Rank...
-                        </option>
-                        <option value="Member">Member</option>
-                        <option value="Leader">Leader</option>
-                        <option value="Organizer">Organizer (All Access)</option>
-                      </select>
-                    </td>
-
-                    <td>
-                      <div className="action-buttons">
-                        {savingId === u._id && (
-                          <Loader2 className="spinner" size={16} />
-                        )}
-                        <button
-                          className="delete-user-btn"
-                          title="Delete User"
-                          onClick={() => handleDelete(u._id)}
+                      {/* ASSIGNED CAMPUS */}
+                      <td>
+                        <select
+                          className="um-select"
+                          value={u.campus || ""}
+                          disabled={isActionLoading}
+                          onChange={(e) =>
+                            handleUserFieldChange(u._id, "campus", e.target.value)
+                          }
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                          <option value="" disabled>
+                            Select Campus
+                          </option>
+                          {CAMPUS_OPTIONS.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* ASSIGNED RANK / ROLE */}
+                      <td>
+                        <select
+                          className="um-select"
+                          value={u.role || ""}
+                          disabled={isActionLoading}
+                          onChange={(e) =>
+                            handleUserFieldChange(u._id, "role", e.target.value)
+                          }
+                        >
+                          <option value="" disabled>
+                            Select Role
+                          </option>
+                          {ROLE_OPTIONS.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td>
+                        <div className="um-actions-cell">
+                          {/* Approve Button (Appears if user is pending) */}
+                          {isPending && (
+                            <button
+                              type="button"
+                              className="action-btn approve"
+                              title="Approve User"
+                              disabled={isActionLoading}
+                              onClick={() => handleApproveUser(u)}
+                            >
+                              <Check size={16} />
+                            </button>
+                          )}
+
+                          {/* Delete / Reject Button */}
+                          <button
+                            type="button"
+                            className="action-btn delete"
+                            title="Reject or Delete Member"
+                            disabled={isActionLoading}
+                            onClick={() => handleDeleteUser(u._id, u.fullName)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
