@@ -462,3 +462,6 @@ module.exports = {
   deleteSponsor,
   getCampusMessages,
 };
+
+
+module.exports = router;
