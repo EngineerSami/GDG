@@ -1,4 +1,5 @@
 const { User, Event, Message } = require("../models/Model"); // Adjust relative path if needed
+const { sendNewEventNotification } = require("../utils/mailer");
 
 // ==========================================
 // USER AUTHENTICATION & REGISTRATION
@@ -6,6 +7,8 @@ const { User, Event, Message } = require("../models/Model"); // Adjust relative 
 
 // @desc    Sign In with Username (Full Name) OR Email + Password
 // @route   POST /api/users/login
+
+
 const loginUser = async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -245,9 +248,31 @@ const createEvent = async (req, res) => {
       sponsors: [],
     });
 
+    // 1. Emit Socket.IO event for real-time dashboard UI update
     if (req.io) {
       req.io.emit("event_created", newEvent);
     }
+
+    // 2. Fetch all approved members in this campus with a valid email
+    // (Also includes organizers so they stay in the loop)
+    User.find({
+      status: "Approved",
+      email: { $exists: true, $ne: "" },
+      $or: [{ campus: campus }, { role: "Organizer" }],
+    })
+      .select("email")
+      .then((users) => {
+        const emails = users.map((u) => u.email).filter(Boolean);
+        if (emails.length > 0) {
+          sendNewEventNotification(emails, {
+            name,
+            description,
+            date,
+            campus,
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching campus emails:", err));
 
     return res.status(201).json({ success: true, data: newEvent });
   } catch (error) {
