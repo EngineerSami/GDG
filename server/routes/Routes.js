@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { sendNewEventNotification } = require("../utils/mailer");
+const sendEmail = require("../utils/mailer");
 
 const {
   loginUser,

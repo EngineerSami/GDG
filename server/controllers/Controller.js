@@ -1,5 +1,5 @@
 const { User, Event, Message } = require("../models/Model");
-const { sendNewEventNotification } = require("../utils/mailer");
+const sendEmail = require("../utils/mailer");
 
 // ==========================================
 // USER AUTHENTICATION & REGISTRATION
