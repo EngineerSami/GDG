@@ -1,21 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../Styles/Userdata.css";
-import { User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  AlertCircle,
+  Loader2,
+  UserPlus,
+  LogIn,
+} from "lucide-react";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
 
 const Userdata = () => {
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState("");
+  // Tab State: "login" or "register"
+  const [activeTab, setActiveTab] = useState("login");
+
+  // Form Fields
+  const [identifier, setIdentifier] = useState(""); // Username or Email for Sign In
+  const [fullName, setFullName] = useState("");     // Register
+  const [email, setEmail] = useState("");           // Register
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Check if session exists on load
+  // Check existing session
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem("userData");
@@ -40,54 +58,102 @@ const Userdata = () => {
     }
   }, [navigate]);
 
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    setError("");
+    setPassword("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!fullName.trim()) {
-      setError("Please enter your full name");
-      return;
-    }
+    if (activeTab === "login") {
+      if (!identifier.trim()) {
+        setError("Please enter your username or email");
+        return;
+      }
+      if (!password.trim()) {
+        setError("Please enter your password");
+        return;
+      }
 
-    if (!password.trim()) {
-      setError("Please enter your password");
-      return;
-    }
+      try {
+        setIsSubmitting(true);
+        const res = await fetch(`${BACKEND_URL}/api/users/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            identifier: identifier.trim(),
+            password: password.trim(),
+          }),
+        });
 
-    try {
-      setIsSubmitting(true);
-      setError("");
+        const data = await res.json();
 
-      const res = await fetch(`${BACKEND_URL}/api/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          password: password.trim(),
-        }),
-      });
+        if (res.ok) {
+          const user = data.data;
+          localStorage.setItem("userData", JSON.stringify(user));
 
-      const data = await res.json();
-
-      if (res.ok) {
-        const user = data.data;
-        localStorage.setItem("userData", JSON.stringify(user));
-
-        if (user.status === "Approved" && user.campus && user.role) {
-          if (user.role === "Organizer") {
-            navigate("/events/all", { replace: true });
+          if (user.status === "Approved" && user.campus && user.role) {
+            if (user.role === "Organizer") {
+              navigate("/events/all", { replace: true });
+            } else {
+              navigate(`/events/${user.campus.toLowerCase()}`, { replace: true });
+            }
           } else {
-            navigate(`/events/${user.campus.toLowerCase()}`, { replace: true });
+            navigate("/pending", { replace: true });
           }
         } else {
-          navigate("/pending", { replace: true });
+          setError(data.message || "Invalid credentials");
         }
-      } else {
-        setError(data.message || "Login failed");
+      } catch (err) {
+        setError("Unable to connect to server");
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (err) {
-      setError("Unable to connect to server");
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      // REGISTER
+      if (!fullName.trim()) {
+        setError("Please enter your full name");
+        return;
+      }
+      if (!email.trim()) {
+        setError("Please enter your email");
+        return;
+      }
+      if (!password.trim()) {
+        setError("Please create a password");
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+        const res = await fetch(`${BACKEND_URL}/api/users/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: fullName.trim(),
+            email: email.trim(),
+            password: password.trim(),
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          const user = data.data;
+          localStorage.setItem("userData", JSON.stringify(user));
+          // New registrations are always pending approval
+          navigate("/pending", { replace: true });
+        } else {
+          setError(data.message || "Registration failed");
+        }
+      } catch (err) {
+        setError("Unable to connect to server");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -96,6 +162,7 @@ const Userdata = () => {
   return (
     <div className="login-wrapper">
       <div className="login-card">
+        {/* Top Header */}
         <div className="login-header">
           <div className="logo-container">
             <img
@@ -105,30 +172,96 @@ const Userdata = () => {
             />
           </div>
           <h2 className="title">Community Portal</h2>
-          <p className="subtitle">Sign in to your GDG AAUP PR Account</p>
+          <p className="subtitle">
+            {activeTab === "login"
+              ? "Sign in to manage your campus events"
+              : "Submit a request to join the PR team"}
+          </p>
         </div>
 
-        <form className="login-form" onSubmit={handleSubmit} noValidate>
-          {/* Full Name */}
-          <div className="input-group">
-            <label className="input-label">
-              Full Name <span className="required-star">*</span>
-            </label>
-            <div className={`input-field-wrapper ${error && !fullName ? "input-error" : ""}`}>
-              <User className="field-icon" size={19} />
-              <input
-                type="text"
-                placeholder="e.g. Sami Daraghmeh"
-                value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value);
-                  if (error) setError("");
-                }}
-              />
-            </div>
-          </div>
+        {/* Tab Buttons */}
+        <div className="auth-tabs">
+          <button
+            type="button"
+            className={`auth-tab-btn ${activeTab === "login" ? "active" : ""}`}
+            onClick={() => handleTabSwitch("login")}
+          >
+            <LogIn size={15} />
+            <span>Sign In</span>
+          </button>
+          <button
+            type="button"
+            className={`auth-tab-btn ${activeTab === "register" ? "active" : ""}`}
+            onClick={() => handleTabSwitch("register")}
+          >
+            <UserPlus size={15} />
+            <span>Join Request</span>
+          </button>
+        </div>
 
-          {/* Password */}
+        {/* Form */}
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
+          {activeTab === "login" ? (
+            /* SIGN IN FIELDS */
+            <div className="input-group">
+              <label className="input-label">
+                Username or Email <span className="required-star">*</span>
+              </label>
+              <div className={`input-field-wrapper ${error && !identifier ? "input-error" : ""}`}>
+                <User className="field-icon" size={19} />
+                <input
+                  type="text"
+                  placeholder="Full name or email@address.com"
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    if (error) setError("");
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            /* REGISTER FIELDS */
+            <>
+              <div className="input-group">
+                <label className="input-label">
+                  Full Name <span className="required-star">*</span>
+                </label>
+                <div className={`input-field-wrapper ${error && !fullName ? "input-error" : ""}`}>
+                  <User className="field-icon" size={19} />
+                  <input
+                    type="text"
+                    placeholder="e.g. Sami Daraghmeh"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (error) setError("");
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">
+                  Email Address <span className="required-star">*</span>
+                </label>
+                <div className={`input-field-wrapper ${error && !email ? "input-error" : ""}`}>
+                  <Mail className="field-icon" size={19} />
+                  <input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError("");
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Password (common to both) */}
           <div className="input-group">
             <label className="input-label">
               Password <span className="required-star">*</span>
@@ -137,7 +270,7 @@ const Userdata = () => {
               <Lock className="field-icon" size={19} />
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter password"
+                placeholder={activeTab === "login" ? "Enter your password" : "Create a password"}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -166,11 +299,11 @@ const Userdata = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="spinner" size={18} />
-                <span>Signing in...</span>
+                <span>Processing...</span>
               </>
             ) : (
               <>
-                <span>Sign In / Register</span>
+                <span>{activeTab === "login" ? "Sign In" : "Send Join Request"}</span>
                 <ArrowRight size={18} />
               </>
             )}

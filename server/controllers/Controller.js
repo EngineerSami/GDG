@@ -1,47 +1,19 @@
-const { User, Event, Message } = require("../models/Model");
+const { User, Event, Message } = require("../models/Model"); // Adjust relative path if needed
 
 // ==========================================
-// USER CONTROLLERS
+// USER AUTHENTICATION & REGISTRATION
 // ==========================================
 
-// @desc    Register or Log In using just Full Name
-// @route   POST /api/users
-
-
-const getCampusMessages = async (req, res) => {
+// @desc    Sign In with Username (Full Name) OR Email + Password
+// @route   POST /api/users/login
+const loginUser = async (req, res) => {
   try {
-    const { campus } = req.query;
+    const { identifier, password } = req.body;
 
-    if (!campus || !["Ramallah", "Jenin"].includes(campus)) {
+    if (!identifier || !identifier.trim()) {
       return res.status(400).json({
         success: false,
-        message: "A valid campus query (Ramallah or Jenin) is required",
-      });
-    }
-
-    // Fetch the last 50 messages in chronological order
-    const messages = await Message.find({ campus })
-      .sort({ createdAt: -1 })
-      .limit(50);
-
-    return res.status(200).json({
-      success: true,
-      data: messages.reverse(),
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
-  }
-};
-// @desc    Register or Log In using Full Name + Plaintext Password
-// @route   POST /api/users
-const saveUserData = async (req, res) => {
-  try {
-    const { fullName, password } = req.body;
-
-    if (!fullName || !fullName.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Full name is required",
+        message: "Please enter your username or email",
       });
     }
 
@@ -52,50 +24,33 @@ const saveUserData = async (req, res) => {
       });
     }
 
-    const trimmedName = fullName.trim();
+    const trimmedIdentifier = identifier.trim();
     const trimmedPassword = password.trim();
 
-    // Check if user already exists
-    let user = await User.findOne({
-      fullName: { $regex: new RegExp(`^${trimmedName}$`, "i") },
+    // Find account by lowercase email or case-insensitive full name
+    const user = await User.findOne({
+      $or: [
+        { email: trimmedIdentifier.toLowerCase() },
+        { fullName: { $regex: new RegExp(`^${trimmedIdentifier}$`, "i") } },
+      ],
     });
 
-    if (user) {
-      // Existing user: check plain-text password match
-      if (user.password && user.password !== trimmedPassword) {
-        return res.status(401).json({
-          success: false,
-          message: "Incorrect password. Please try again.",
-        });
-      }
-
-      // If user had no password set previously (from old tests), set it now
-      if (!user.password) {
-        user.password = trimmedPassword;
-        await user.save();
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: user,
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Account not found. Please register first.",
       });
     }
 
-    // New user registration
-    user = await User.create({
-      fullName: trimmedName,
-      password: trimmedPassword,
-      status: "Pending",
-      campus: "",
-      role: "",
-    });
-
-    // Notify admin dashboard in real-time
-    if (req.io) {
-      req.io.emit("user_created", user);
+    // Verify plaintext password
+    if (user.password !== trimmedPassword) {
+      return res.status(401).json({
+        success: false,
+        message: "Incorrect password. Please try again.",
+      });
     }
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       data: user,
     });
@@ -104,57 +59,87 @@ const saveUserData = async (req, res) => {
   }
 };
 
-// @desc    Get status of a specific user (used by Pending page polling)
-// @route   GET /api/users/:id/status
-const getUserStatus = async (req, res) => {
+// @desc    Register a new user (Join Request) with Pending status
+// @route   POST /api/users/register
+const registerUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    const { fullName, email, password } = req.body;
+
+    if (!fullName || !fullName.trim()) {
+      return res.status(400).json({ success: false, message: "Full name is required" });
     }
-    return res.status(200).json({ success: true, data: user });
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    if (!password || !password.trim()) {
+      return res.status(400).json({ success: false, message: "Password is required" });
+    }
+
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    // Check if account already exists
+    const existingUser = await User.findOne({
+      $or: [
+        { email: trimmedEmail },
+        { fullName: { $regex: new RegExp(`^${trimmedName}$`, "i") } },
+      ],
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "An account with this name or email already exists. Please sign in.",
+      });
+    }
+
+    // Create user with Pending status
+    const newUser = await User.create({
+      fullName: trimmedName,
+      email: trimmedEmail,
+      password: trimmedPassword,
+      status: "Pending",
+      campus: "",
+      role: "",
+    });
+
+    // Notify the admin review panel in real-time
+    if (req.io) {
+      req.io.emit("user_created", newUser);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Join request submitted. Awaiting organizer approval.",
+      data: newUser,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Get all users (for the Admin Management page)
+// ==========================================
+// USER MANAGEMENT (ADMIN DASHBOARD)
+// ==========================================
+
+// @desc    Get all users (for Admin/Organizer user management)
 // @route   GET /api/users
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
-    return res.status(200).json({
-      success: true,
-      count: users.length,
-      data: users,
-    });
+    return res.status(200).json({ success: true, data: users });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-    // In Controller.js
-  const getEventById = async (req, res) => {
-    try {
-      const event = await Event.findById(req.params.id);
-      if (!event) {
-        return res.status(404).json({ success: false, message: "Event not found" });
-      }
-      return res.status(200).json({ success: true, data: event });
-    } catch (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-  };
-
-// @desc    Assign Campus & Role to a User, and set Status to Approved
+// @desc    Approve/Update user campus and role
 // @route   PUT /api/users/:id
-const updateUserDetails = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
-    const { id } = req.params;
     const { campus, role, status } = req.body;
+    const { id } = req.params;
 
     const user = await User.findById(id);
     if (!user) {
@@ -165,68 +150,69 @@ const updateUserDetails = async (req, res) => {
     if (role !== undefined) user.role = role;
     if (status !== undefined) user.status = status;
 
-    // Auto-approve if both campus and role are selected
-    if (user.campus && user.role) {
-      user.status = "Approved";
-    }
-
     await user.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "User updated successfully",
-      data: user,
-    });
+    if (req.io) {
+      req.io.emit("user_updated", user);
+    }
+
+    return res.status(200).json({ success: true, data: user });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Delete a user
+// @desc    Delete user account (Reject request)
 // @route   DELETE /api/users/:id
 const deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) {
+    const { id } = req.params;
+    const deletedUser = await User.findByIdAndDelete(id);
+
+    if (!deletedUser) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-    return res.status(200).json({ success: true, message: "User deleted" });
+
+    if (req.io) {
+      req.io.emit("user_deleted", id);
+    }
+
+    return res.status(200).json({ success: true, message: "User removed successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ==========================================
-// EVENT CONTROLLERS
+// EVENTS MANAGEMENT
 // ==========================================
-const getEventsByCampus = async (req, res) => {
+
+// @desc    Get events filtered by campus/role
+// @route   GET /api/events?campus=Ramallah&role=Member
+const getEvents = async (req, res) => {
   try {
     const { campus, role } = req.query;
 
     let filter = {};
-    if (role === "Organizer" && (!campus || campus === "All")) {
-      filter = {};
-    } else if (campus && ["Ramallah", "Jenin"].includes(campus)) {
-      filter = { campus };
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "A valid campus (Ramallah or Jenin) query is required",
-      });
+
+    // Organizers can query "All" or filter down to a specific campus
+    if (role === "Organizer") {
+      if (campus && campus !== "All") {
+        filter.campus = campus;
+      }
+    } else if (campus) {
+      filter.campus = campus;
     }
 
     const events = await Event.find(filter).sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      count: events.length,
-      data: events,
-    });
+    return res.status(200).json({ success: true, data: events });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// @desc    Create a new event note (Leader or Organizer)
+// @route   POST /api/events
 const createEvent = async (req, res) => {
   try {
     const { name, description, date, campus, role } = req.body;
@@ -234,44 +220,41 @@ const createEvent = async (req, res) => {
     if (role !== "Leader" && role !== "Organizer") {
       return res.status(403).json({
         success: false,
-        message: "Forbidden: Only leaders and organizers can create events",
+        message: "Only Leaders and Organizers are authorized to create events",
       });
     }
 
     if (!name || !description || !campus) {
       return res.status(400).json({
         success: false,
-        message: "name, description, and campus are required",
+        message: "Name, description, and campus are required",
       });
     }
 
-    const colors = [
-      "note-yellow",
-      "note-green",
-      "note-blue",
-      "note-pink",
-      "note-purple",
-    ];
-    const colorClass = colors[Math.floor(Math.random() * colors.length)];
+    const noteColors = ["note-yellow", "note-green", "note-blue", "note-pink", "note-purple"];
+    const randomColor = noteColors[Math.floor(Math.random() * noteColors.length)];
 
     const newEvent = await Event.create({
       name,
       description,
       date: date || "",
       campus,
-      colorClass,
+      colorClass: randomColor,
       sponsors: [],
     });
 
-    return res.status(201).json({
-      success: true,
-      data: newEvent,
-    });
+    if (req.io) {
+      req.io.emit("event_created", newEvent);
+    }
+
+    return res.status(201).json({ success: true, data: newEvent });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// @desc    Update event details (Leader or Organizer)
+// @route   PUT /api/events/:id
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -280,7 +263,7 @@ const updateEvent = async (req, res) => {
     if (role !== "Leader" && role !== "Organizer") {
       return res.status(403).json({
         success: false,
-        message: "Forbidden: Only leaders and organizers can update events",
+        message: "Only Leaders and Organizers are authorized to edit events",
       });
     }
 
@@ -289,19 +272,25 @@ const updateEvent = async (req, res) => {
       return res.status(404).json({ success: false, message: "Event not found" });
     }
 
-    if (name !== undefined) event.name = name;
-    if (description !== undefined) event.description = description;
+    if (name) event.name = name;
+    if (description) event.description = description;
     if (date !== undefined) event.date = date;
-    if (campus !== undefined && role === "Organizer") event.campus = campus;
+    if (campus) event.campus = campus;
 
     await event.save();
 
+    if (req.io) {
+      req.io.emit("event_updated", event);
+    }
+
     return res.status(200).json({ success: true, data: event });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// @desc    Delete an event note (Leader or Organizer)
+// @route   DELETE /api/events/:id
 const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -310,27 +299,31 @@ const deleteEvent = async (req, res) => {
     if (role !== "Leader" && role !== "Organizer") {
       return res.status(403).json({
         success: false,
-        message: "Forbidden: Only leaders and organizers can delete events",
+        message: "Only Leaders and Organizers are authorized to delete events",
       });
     }
 
-    const event = await Event.findByIdAndDelete(id);
-    if (!event) {
+    const deletedEvent = await Event.findByIdAndDelete(id);
+    if (!deletedEvent) {
       return res.status(404).json({ success: false, message: "Event not found" });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Event deleted successfully",
-    });
+    if (req.io) {
+      req.io.emit("event_deleted", id);
+    }
+
+    return res.status(200).json({ success: true, message: "Event deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ==========================================
-// SPONSOR CONTROLLERS
+// SPONSORS SUB-DOCUMENT OPERATIONS
 // ==========================================
+
+// @desc    Add a sponsor to an event
+// @route   POST /api/events/:id/sponsors
 const addSponsor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -339,7 +332,7 @@ const addSponsor = async (req, res) => {
     if (!name || !contact) {
       return res.status(400).json({
         success: false,
-        message: "Name and contact info are required",
+        message: "Sponsor name and contact details are required",
       });
     }
 
@@ -352,17 +345,23 @@ const addSponsor = async (req, res) => {
       name,
       contact,
       status: status || "Suggestion",
-      addedBy: addedBy || "Anonymous Member",
+      addedBy: addedBy || "Member",
     });
 
     await event.save();
 
-    return res.status(201).json({ success: true, data: event });
+    if (req.io) {
+      req.io.emit("event_updated", event);
+    }
+
+    return res.status(200).json({ success: true, data: event });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// @desc    Update a sponsor inside an event
+// @route   PUT /api/events/:eventId/sponsors/:sponsorId
 const updateSponsor = async (req, res) => {
   try {
     const { eventId, sponsorId } = req.params;
@@ -384,12 +383,18 @@ const updateSponsor = async (req, res) => {
 
     await event.save();
 
+    if (req.io) {
+      req.io.emit("event_updated", event);
+    }
+
     return res.status(200).json({ success: true, data: event });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// @desc    Remove a sponsor from an event
+// @route   DELETE /api/events/:eventId/sponsors/:sponsorId
 const deleteSponsor = async (req, res) => {
   try {
     const { eventId, sponsorId } = req.params;
@@ -402,31 +407,58 @@ const deleteSponsor = async (req, res) => {
     event.sponsors.pull(sponsorId);
     await event.save();
 
+    if (req.io) {
+      req.io.emit("event_updated", event);
+    }
+
     return res.status(200).json({ success: true, data: event });
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
-  
 };
 
+// ==========================================
+// CAMPUS CHAT MESSAGES
+// ==========================================
 
+// @desc    Get recent chat messages for a campus
+// @route   GET /api/messages?campus=Ramallah
+const getCampusMessages = async (req, res) => {
+  try {
+    const { campus } = req.query;
+
+    if (!campus || !["Ramallah", "Jenin"].includes(campus)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid campus query (Ramallah or Jenin) is required",
+      });
+    }
+
+    const messages = await Message.find({ campus })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.status(200).json({
+      success: true,
+      data: messages.reverse(),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
-  // Users
-  saveUserData,
-  getUserStatus,
+  loginUser,
+  registerUser,
   getAllUsers,
-  updateUserDetails,
+  updateUser,
   deleteUser,
-  // Events
-  getEventsByCampus,
+  getEvents,
   createEvent,
   updateEvent,
   deleteEvent,
-  getEventById,
-  getCampusMessages,
-  // Sponsors
   addSponsor,
   updateSponsor,
   deleteSponsor,
+  getCampusMessages,
 };
