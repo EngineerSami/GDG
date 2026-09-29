@@ -1,10 +1,31 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
+const dns = require("node:dns");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  lookup: (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+      callback(err, address, family);
+    });
+  },
+  tls: {
+    rejectUnauthorized: false,
+    servername: "smtp.gmail.com",
+  },
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000,
+});
 
 const sendNewEventNotification = async (recipientEmails, eventDetails) => {
-  if (!process.env.RESEND_API_KEY) {
-    console.error("Missing RESEND_API_KEY environment variable");
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("⚠️ EMAIL_USER or EMAIL_PASS missing. Skipping email notification.");
     return;
   }
 
@@ -12,9 +33,9 @@ const sendNewEventNotification = async (recipientEmails, eventDetails) => {
 
   for (const email of recipientEmails) {
     try {
-      console.log(`⏳ Sending via HTTPS to: ${email}...`);
-      const { data, error } = await resend.emails.send({
-        from: "GDG AAUP <onboarding@resend.dev>", // Or your verified domain
+      console.log(`⏳ Attempting to send email to: ${email}...`);
+      const info = await transporter.sendMail({
+        from: `"GDG AAUP PR Team" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: `🚀 New Event: ${name} (${campus} Campus)`,
         html: `
@@ -26,14 +47,9 @@ const sendNewEventNotification = async (recipientEmails, eventDetails) => {
           </div>
         `,
       });
-
-      if (error) {
-        console.error(`❌ Delivery error for ${email}:`, error.message);
-      } else {
-        console.log(`✅ Delivered via API to ${email} (ID: ${data.id})`);
-      }
+      console.log(`✅ Sent successfully to ${email} (MessageId: ${info.messageId})`);
     } catch (err) {
-      console.error(`❌ Exception sending to ${email}:`, err.message);
+      console.error(`❌ Failed sending to ${email}:`, err.message);
     }
   }
 };
