@@ -255,24 +255,23 @@ const createEvent = async (req, res) => {
 
     // 2. Fetch all approved members in this campus with a valid email
     // (Also includes organizers so they stay in the loop)
-    User.find({
-      status: "Approved",
-      email: { $exists: true, $ne: "" },
-      $or: [{ campus: campus }, { role: "Organizer" }],
-    })
-      .select("email")
-      .then((users) => {
-        const emails = users.map((u) => u.email).filter(Boolean);
-        if (emails.length > 0) {
-          sendNewEventNotification(emails, {
-            name,
-            description,
-            date,
-            campus,
-          });
-        }
-      })
-      .catch((err) => console.error("Error fetching campus emails:", err));
+// Inside createEvent in Controller.js
+User.find({
+  status: "Approved",
+  email: { $exists: true,$ne: "" },
+  $or: [{ campus: campus }, { role: "Organizer" }],
+})
+  .select("email fullName campus")
+  .then((users) => {
+    console.log(`Found ${users.length} recipient user(s) for event in ${campus}:`, users);
+    const emails = users.map((u) => u.email).filter(Boolean);
+    if (emails.length > 0) {
+      sendNewEventNotification(emails, { name, description, date, campus });
+    } else {
+      console.warn("⚠️️ No approved users with emails match this campus.");
+    }
+  })
+  .catch((err) => console.error("Error fetching campus emails:", err));
 
     return res.status(201).json({ success: true, data: newEvent });
   } catch (error) {
