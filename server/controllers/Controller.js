@@ -218,6 +218,8 @@ const getEvents = async (req, res) => {
 
 // @desc    Create a new event note (Leader or Organizer)
 // @route   POST /api/events
+const { sendNewEventNotification } = require("../utils/mailer"); // Verify relative path
+
 const createEvent = async (req, res) => {
   try {
     const { name, description, date, campus, role } = req.body;
@@ -248,7 +250,6 @@ const createEvent = async (req, res) => {
       sponsors: [],
     });
 
-    // 1. Emit Socket.IO event for real-time dashboard UI update
     if (req.io) {
       req.io.emit("event_created", newEvent);
     }
@@ -256,24 +257,31 @@ const createEvent = async (req, res) => {
     // 2. Fetch all approved members in this campus with a valid email
     // (Also includes organizers so they stay in the loop)
 // Inside createEvent in Controller.js
-User.find({
-  status: "Approved",
-  email: { $exists: true,$ne: "" },
-  $or: [{ campus: campus }, { role: "Organizer" }],
-})
-  .select("email fullName campus")
-  .then((users) => {
-    console.log(`Found ${users.length} recipient user(s) for event in ${campus}:`, users);
-    const emails = users.map((u) => u.email).filter(Boolean);
-    if (emails.length > 0) {
-      sendNewEventNotification(emails, { name, description, date, campus });
-    } else {
-      console.warn("⚠️️ No approved users with emails match this campus.");
-    }
-  })
-  .catch((err) => console.error("Error fetching campus emails:", err));
+res.status(201).json({ success: true, data: newEvent });
 
-    return res.status(201).json({ success: true, data: newEvent });
+    // Execute email dispatch
+    try {
+      const users = await User.find({
+        status: "Approved",
+        email: { $exists: true,$ne: "" },
+        $or: [{ campus: campus }, { role: "Organizer" }],
+      }).select("email fullName campus");
+
+      console.log(`Found ${users.length} recipient user(s) for event in ${campus}`);
+
+      const emails = users.map((u) => u.email).filter(Boolean);
+
+      if (emails.length > 0) {
+        await sendNewEventNotification(emails, {
+          name,
+          description,
+          date,
+          campus,
+        });
+      }
+    } catch (emailErr) {
+      console.error("Email dispatch routine error:", emailErr);
+    }
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
