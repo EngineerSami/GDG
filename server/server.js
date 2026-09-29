@@ -1,3 +1,8 @@
+const dns = require("node:dns");
+
+// Prefer IPv4 over IPv6
+dns.setDefaultResultOrder("ipv4first");
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -8,8 +13,8 @@ require("dotenv").config();
 require("./config/mongoose.config");
 
 // Models and Routes
-const { Message } = require("./models/Model"); // Adjust relative path if Model.js is elsewhere
-const appRoutes = require("./routes/Routes");   // Adjust relative path if Routes.js is elsewhere
+const { Message } = require("./models/Model");
+const appRoutes = require("./routes/Routes");
 
 const app = express();
 

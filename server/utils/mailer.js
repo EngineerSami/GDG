@@ -1,24 +1,29 @@
-
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   secure: true,
+
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 20000,
+
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
 });
 
 transporter.verify()
   .then(() => {
     console.log("✅ Gmail SMTP connection successful");
   })
-  .catch((err) => {
-    console.error("❌ Gmail SMTP error:", err.code, err.message);
+  .catch((error) => {
+    console.error("❌ Gmail SMTP error:", error);
   });
+
+module.exports = transporter;
 const createTransporter = () => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new Error("EMAIL_USER or EMAIL_PASS is missing");
