@@ -1,24 +1,28 @@
 const nodemailer = require("nodemailer");
+const dns = require("node:dns");
+
+// FORCE Node to resolve IPv4 addresses first (Fixes Render's ENETUNREACH)
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 console.log("Initializing Nodemailer with user:", process.env.EMAIL_USER ? "EXISTS" : "MISSING");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
-  secure: false, // Port 587 uses STARTTLS
-  family: 4,     // CRITICAL: Forces IPv4 to bypass Render's ENETUNREACH IPv6 issue
+  secure: false, // TLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false, // Prevents self-signed cert dropouts on cloud hosts
+    rejectUnauthorized: false,
+    servername: "smtp.gmail.com",
   },
-  pool: true,
-  maxConnections: 3,
-  connectionTimeout: 8000,
-  greetingTimeout: 8000,
-  socketTimeout: 10000,
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 transporter.verify((err) => {
