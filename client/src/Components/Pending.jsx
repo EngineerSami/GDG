@@ -79,14 +79,14 @@ const Pending = () => {
         <p>
           Hello <strong>{user.fullName || "Member"}</strong>, your request to
           join the GDG AAUP PR dashboard has been received.
-        </p> <br />
+        </p>
         <div className="status-note">
-          <Loader2 className="spinner" size={30} /> <br /> <br />
+          <Loader2 className="spinner" size={16} />
           <span>Waiting for chapter organizer approval...</span>
         </div>
         <p className="auto-redirect-hint">
           This page will redirect automatically as soon as you are approved.
-        </p> <br />
+        </p>
 
         <button className="pending-logout-btn" onClick={handleLogout}>
           <LogOut size={16} />

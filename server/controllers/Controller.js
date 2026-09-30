@@ -1,5 +1,4 @@
-const { User, Event, Message } = require("../models/Model");
-const sendEmail = require("../utils/mailer");
+const { User, Event, Message } = require("../models/Model"); // Adjust relative path if needed
 
 // ==========================================
 // USER AUTHENTICATION & REGISTRATION
@@ -80,6 +79,7 @@ const registerUser = async (req, res) => {
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
 
+    // Check if account already exists
     const existingUser = await User.findOne({
       $or: [
         { email: trimmedEmail },
@@ -94,6 +94,7 @@ const registerUser = async (req, res) => {
       });
     }
 
+    // Create user with Pending status
     const newUser = await User.create({
       fullName: trimmedName,
       email: trimmedEmail,
@@ -103,6 +104,7 @@ const registerUser = async (req, res) => {
       role: "",
     });
 
+    // Notify the admin review panel in real-time
     if (req.io) {
       req.io.emit("user_created", newUser);
     }
@@ -121,7 +123,7 @@ const registerUser = async (req, res) => {
 // USER MANAGEMENT (ADMIN DASHBOARD)
 // ==========================================
 
-// @desc    Get all users (for Admin user management)
+// @desc    Get all users (for Admin/Organizer user management)
 // @route   GET /api/users
 const getAllUsers = async (req, res) => {
   try {
@@ -134,6 +136,7 @@ const getAllUsers = async (req, res) => {
 
 // @desc    Approve/Update user campus and role
 // @route   PUT /api/users/:id
+// PUT /api/users/:id
 const updateUser = async (req, res) => {
   try {
     const { campus, role, status } = req.body;
@@ -150,6 +153,7 @@ const updateUser = async (req, res) => {
 
     await user.save();
 
+    // Broadcast update so Pending.jsx can catch it
     if (req.io) {
       req.io.emit("user_updated", user);
     }
@@ -160,7 +164,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-// @desc    Delete user account
+// @desc    Delete user account (Reject request)
 // @route   DELETE /api/users/:id
 const deleteUser = async (req, res) => {
   try {
@@ -193,6 +197,7 @@ const getEvents = async (req, res) => {
 
     let filter = {};
 
+    // Organizers can query "All" or filter down to a specific campus
     if (role === "Organizer") {
       if (campus && campus !== "All") {
         filter.campus = campus;
@@ -208,7 +213,7 @@ const getEvents = async (req, res) => {
   }
 };
 
-// @desc    Create a new event note (Leader or Organizer) & dispatch emails
+// @desc    Create a new event note (Leader or Organizer)
 // @route   POST /api/events
 const createEvent = async (req, res) => {
   try {
@@ -244,32 +249,7 @@ const createEvent = async (req, res) => {
       req.io.emit("event_created", newEvent);
     }
 
-    // Respond immediately to keep the client UI instant
-    res.status(201).json({ success: true, data: newEvent });
-
-    // Background email notification dispatch
-    try {
-      const users = await User.find({
-        status: "Approved",
-        email: { $exists: true,$ne: "" },
-        $or: [{ campus: campus }, { role: "Organizer" }],
-      }).select("email fullName campus");
-
-      console.log(`Found ${users.length} recipient user(s) for event in ${campus}`);
-
-      const emails = users.map((u) => u.email).filter(Boolean);
-
-      if (emails.length > 0) {
-        await sendNewEventNotification(emails, {
-          name,
-          description,
-          date,
-          campus,
-        });
-      }
-    } catch (emailErr) {
-      console.error("Email dispatch routine error:", emailErr);
-    }
+    return res.status(201).json({ success: true, data: newEvent });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
