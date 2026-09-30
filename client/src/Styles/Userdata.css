@@ -207,6 +207,12 @@ body {
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+@media (max-width: 640px) {
+  
+.login-card {
+  max-width: 400px;
+}
+}
 /* Header & Logo */
 .login-header {
   text-align: center;
