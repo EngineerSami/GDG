@@ -107,38 +107,54 @@ const Events = () => {
   useEffect(() => {
     fetchEvents();
 
-    socket.on("event_created", (newEvent) => {
+    const handleEventCreated = (newEvent) => {
+      let shouldAdd = false;
+
       if (isOrganizer) {
         if (organizerFilter === "All" || organizerFilter === newEvent.campus) {
-          setEvents((prev) => [newEvent, ...prev]);
+          shouldAdd = true;
         }
       } else {
         const activeCampus =
           campusName?.toLowerCase() === "jenin" ? "Jenin" : "Ramallah";
         if (newEvent.campus === activeCampus) {
-          setEvents((prev) => [newEvent, ...prev]);
+          shouldAdd = true;
         }
       }
-    });
 
-    socket.on("event_updated", (updatedEvent) => {
+      if (shouldAdd) {
+        setEvents((prev) => {
+          // Prevent duplicate if already added
+          if (prev.some((ev) => ev._id === newEvent._id)) {
+            return prev;
+          }
+          return [newEvent, ...prev];
+        });
+      }
+    };
+
+    const handleEventUpdated = (updatedEvent) => {
       setEvents((prev) =>
         prev.map((ev) => (ev._id === updatedEvent._id ? updatedEvent : ev))
       );
       setSelectedEvent((curr) =>
         curr && curr._id === updatedEvent._id ? updatedEvent : curr
       );
-    });
+    };
 
-    socket.on("event_deleted", (deletedId) => {
+    const handleEventDeleted = (deletedId) => {
       setEvents((prev) => prev.filter((ev) => ev._id !== deletedId));
       setSelectedEvent((curr) => (curr && curr._id === deletedId ? null : curr));
-    });
+    };
+
+    socket.on("event_created", handleEventCreated);
+    socket.on("event_updated", handleEventUpdated);
+    socket.on("event_deleted", handleEventDeleted);
 
     return () => {
-      socket.off("event_created");
-      socket.off("event_updated");
-      socket.off("event_deleted");
+      socket.off("event_created", handleEventCreated);
+      socket.off("event_updated", handleEventUpdated);
+      socket.off("event_deleted", handleEventDeleted);
     };
   }, [fetchEvents, isOrganizer, organizerFilter, campusName]);
 
@@ -201,7 +217,11 @@ const Events = () => {
             prev.map((ev) => (ev._id === editingEvent._id ? result.data : ev))
           );
         } else {
-          setEvents((prev) => [result.data, ...prev]);
+          // Safely prepend only if socket hasn't already added it
+          setEvents((prev) => {
+            if (prev.some((ev) => ev._id === result.data._id)) return prev;
+            return [result.data, ...prev];
+          });
         }
         setIsEventModalOpen(false);
       } else {
@@ -263,15 +283,9 @@ const Events = () => {
 
       const result = await res.json();
       if (res.ok) {
-        if (editingEvent) {
-          setEvents((prev) =>
-            prev.map((ev) => (ev._id === selectedEvent._id ? result.data : ev))
-          );
-        } else {
-          setEvents((prev) =>
-            prev.map((ev) => (ev._id === selectedEvent._id ? result.data : ev))
-          );
-        }
+        setEvents((prev) =>
+          prev.map((ev) => (ev._id === selectedEvent._id ? result.data : ev))
+        );
         setSelectedEvent(result.data);
         setSponsorForm({
           _id: null,
