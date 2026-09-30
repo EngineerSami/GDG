@@ -243,7 +243,7 @@ const Userdata = () => {
             onClick={() => handleTabSwitch("register")}
           >
             <UserPlus size={15} />
-            <span>Join Request</span>
+            <span>Join</span>
           </button>
         </div>
 
