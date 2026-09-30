@@ -519,13 +519,15 @@
 
 .sponsor-inline-form input,
 .sponsor-inline-form select {
-  background-color: var(--input-bg);
-  border: 1px solid var(--border-color);
+  background-color: var(--input-bg, #ffffff);
+  border: 1px solid var(--border-color, #dadce0);
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 13px;
-  color: var(--text-primary);
+  color: var(--text-primary, #202124);
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .add-sponsor-btn {
@@ -533,10 +535,11 @@
   color: #ffffff;
   border: none;
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.15s ease;
 }
 
@@ -546,12 +549,62 @@
 
 .cancel-sponsor-btn {
   background: transparent;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color, #dadce0);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--text-secondary, #5f6368);
   cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .sponsors-modal {
+    width: 95% !important;
+    max-height: 90vh;
+    padding: 20px 16px !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sponsor-inline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .sponsor-inline-form input,
+  .sponsor-inline-form select {
+    padding: 11px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  .add-sponsor-btn,
+  .cancel-sponsor-btn {
+    width: 100%;
+    padding: 11px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sponsor-card {
+    padding: 12px;
+  }
+
+  .sponsor-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .sponsors-list {
+    max-height: 240px;
+  }
 }
 
 .sponsors-list {
