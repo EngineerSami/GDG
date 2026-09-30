@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
+import { useTheme } from "./ThemeContext";
 import ChatWidget from "./ChatWidget";
 import "../Styles/Events.css";
 import {
@@ -18,12 +19,13 @@ import {
   Loader2,
   Crown,
   LogOut,
+  Sun,
+  Moon,
   User as UserIcon,
 } from "lucide-react";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
 const API_BASE_URL = `${BACKEND_URL}/api/events`;
-
 const socket = io(BACKEND_URL);
 
 const SPONSOR_STATUSES = [
@@ -37,6 +39,7 @@ const SPONSOR_STATUSES = [
 const Events = () => {
   const { campusName } = useParams();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const user = JSON.parse(
     localStorage.getItem("userData") ||
@@ -47,9 +50,7 @@ const Events = () => {
   const isLeader = user.role === "Leader";
   const hasEventAdminRights = isOrganizer || isLeader;
 
-  // Selected campus filter for Organizers
   const [organizerFilter, setOrganizerFilter] = useState("All");
-
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -73,7 +74,6 @@ const Events = () => {
   });
   const [isEditingSponsor, setIsEditingSponsor] = useState(false);
 
-  // Fetch Events
   const fetchEvents = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -103,13 +103,11 @@ const Events = () => {
     }
   }, [campusName, isOrganizer, organizerFilter, user.role]);
 
-  // Initial fetch and Real-time Socket.IO listeners
   useEffect(() => {
     fetchEvents();
 
     const handleEventCreated = (newEvent) => {
       let shouldAdd = false;
-
       if (isOrganizer) {
         if (organizerFilter === "All" || organizerFilter === newEvent.campus) {
           shouldAdd = true;
@@ -124,10 +122,7 @@ const Events = () => {
 
       if (shouldAdd) {
         setEvents((prev) => {
-          // Prevent duplicate if already added
-          if (prev.some((ev) => ev._id === newEvent._id)) {
-            return prev;
-          }
+          if (prev.some((ev) => ev._id === newEvent._id)) return prev;
           return [newEvent, ...prev];
         });
       }
@@ -163,7 +158,6 @@ const Events = () => {
     navigate("/", { replace: true });
   };
 
-  // Event handlers
   const handleOpenEventModal = (eventToEdit = null) => {
     if (!hasEventAdminRights) return;
     if (eventToEdit) {
@@ -199,15 +193,10 @@ const Events = () => {
         : API_BASE_URL;
       const method = editingEvent ? "PUT" : "POST";
 
-      const payload = {
-        ...eventForm,
-        role: user.role,
-      };
-
       const res = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...eventForm, role: user.role }),
       });
 
       const result = await res.json();
@@ -217,7 +206,6 @@ const Events = () => {
             prev.map((ev) => (ev._id === editingEvent._id ? result.data : ev))
           );
         } else {
-          // Safely prepend only if socket hasn't already added it
           setEvents((prev) => {
             if (prev.some((ev) => ev._id === result.data._id)) return prev;
             return [result.data, ...prev];
@@ -256,7 +244,6 @@ const Events = () => {
     }
   };
 
-  // Sponsor handlers
   const handleSaveSponsor = async (e) => {
     e.preventDefault();
     if (!selectedEvent) return;
@@ -270,15 +257,13 @@ const Events = () => {
         method = "PUT";
       }
 
-      const payload = {
-        ...sponsorForm,
-        addedBy: user.fullName || "Anonymous Member",
-      };
-
       const res = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...sponsorForm,
+          addedBy: user.fullName || "Anonymous Member",
+        }),
       });
 
       const result = await res.json();
@@ -332,7 +317,6 @@ const Events = () => {
 
   return (
     <div className="events-dashboard">
-      {/* Top Header */}
       <header className="events-header">
         <div className="header-left">
           <h1>Community Events</h1>
@@ -355,7 +339,6 @@ const Events = () => {
         </div>
 
         <div className="header-actions">
-          {/* Organizer Campus Selector */}
           {isOrganizer && (
             <div className="campus-toggle">
               <button
@@ -389,6 +372,14 @@ const Events = () => {
             </button>
           )}
 
+          <button
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+          >
+            {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
+
           <button className="logout-btn" onClick={handleLogout} title="Sign Out">
             <LogOut size={16} />
             <span>Sign Out</span>
@@ -396,7 +387,6 @@ const Events = () => {
         </div>
       </header>
 
-      {/* Board */}
       <main className="sticky-board">
         {isLoading ? (
           <div className="empty-board">
@@ -411,9 +401,7 @@ const Events = () => {
         ) : events.length === 0 ? (
           <div className="empty-board">
             <p>No events found.</p>
-            {hasEventAdminRights && (
-              <span>Click "Create Event" to add one!</span>
-            )}
+            {hasEventAdminRights && <span>Click "Create Event" to add one!</span>}
           </div>
         ) : (
           <div className="board-grid">
@@ -435,7 +423,7 @@ const Events = () => {
                       title="Edit Event"
                       onClick={() => handleOpenEventModal(ev)}
                     >
-                      <Edit2 size={15} color="#3c4043" />
+                      <Edit2 size={15} color="currentColor" />
                     </button>
                     <button
                       className="note-btn delete"
@@ -471,7 +459,7 @@ const Events = () => {
         )}
       </main>
 
-      {/* MODAL 1: Create / Edit Event Note */}
+      {/* Event Modal */}
       {isEventModalOpen && hasEventAdminRights && (
         <div className="modal-backdrop">
           <div className="modal-box">
@@ -499,7 +487,6 @@ const Events = () => {
                 />
               </div>
 
-              {/* Campus Selector for Organizers */}
               {isOrganizer && (
                 <div className="form-group">
                   <label>Campus</label>
@@ -556,7 +543,7 @@ const Events = () => {
         </div>
       )}
 
-      {/* MODAL 2: Sponsors Panel */}
+      {/* Sponsors Modal */}
       {selectedEvent && (
         <div className="modal-backdrop">
           <div className="modal-box sponsors-modal">
@@ -588,7 +575,6 @@ const Events = () => {
                 </span>
               </div>
 
-              {/* Add / Edit Sponsor Form */}
               <form onSubmit={handleSaveSponsor} className="sponsor-inline-form">
                 <input
                   type="text"
@@ -596,7 +582,7 @@ const Events = () => {
                   required
                   value={sponsorForm.name}
                   onChange={(e) =>
-                    setSponsorForm({ ...sponsorForm, name: e.target.value })
+                    setEventForm({ ...sponsorForm, name: e.target.value })
                   }
                 />
                 <input
@@ -642,7 +628,6 @@ const Events = () => {
                 )}
               </form>
 
-              {/* Sponsors List */}
               <div className="sponsors-list">
                 {!selectedEvent.sponsors || selectedEvent.sponsors.length === 0 ? (
                   <p className="empty-sponsors">
@@ -651,15 +636,14 @@ const Events = () => {
                 ) : (
                   selectedEvent.sponsors.map((sp) => (
                     <div key={sp._id} className="sponsor-card">
-                      {/* TOP ROW: Sponsor Info */}
                       <div className="sponsor-info">
                         <h4>{sp.name}</h4>
                         <div className="sponsor-meta-row">
                           <span className="sponsor-contact">
                             {sp.contact?.includes("@") ? (
-                              <Mail size={13} color="#5f6368" />
+                              <Mail size={13} color="currentColor" />
                             ) : (
-                              <Phone size={13} color="#5f6368" />
+                              <Phone size={13} color="currentColor" />
                             )}
                             {sp.contact}
                           </span>
@@ -671,7 +655,6 @@ const Events = () => {
                         </div>
                       </div>
 
-                      {/* BOTTOM ROW: Status Pill & Action Buttons */}
                       <div className="sponsor-footer-row">
                         <span
                           className={`status-pill status-${(sp.status || "suggestion")
@@ -687,16 +670,14 @@ const Events = () => {
                             className="action-btn edit-btn"
                             onClick={() => handleEditSponsorInit(sp)}
                             title="Edit Sponsor"
-                            aria-label="Edit Sponsor"
                           >
-                            <Edit2 size={15} color="#3c4043" />
+                            <Edit2 size={15} color="currentColor" />
                           </button>
                           <button
                             type="button"
                             className="action-btn delete-btn"
                             onClick={() => handleDeleteSponsor(sp._id)}
                             title="Delete Sponsor"
-                            aria-label="Delete Sponsor"
                           >
                             <Trash2 size={15} color="#ea4335" />
                           </button>
@@ -711,7 +692,6 @@ const Events = () => {
         </div>
       )}
 
-      {/* Floating Real-Time Campus Chat */}
       <ChatWidget socket={socket} currentUser={user} />
     </div>
   );

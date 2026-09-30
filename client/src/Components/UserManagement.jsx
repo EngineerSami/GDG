@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
+import { useTheme } from "./ThemeContext";
 import {
   Check,
   Trash2,
@@ -10,12 +11,13 @@ import {
   Loader2,
   AlertCircle,
   Mail,
+  Sun,
+  Moon,
 } from "lucide-react";
 import "../Styles/UserManagement.css";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
 const API_BASE_URL = `${BACKEND_URL}/api/users`;
-
 const socket = io(BACKEND_URL);
 
 const CAMPUS_OPTIONS = ["Ramallah", "Jenin"];
@@ -26,6 +28,7 @@ const ROLE_OPTIONS = [
 ];
 
 const UserManagement = () => {
+  const { theme, toggleTheme } = useTheme();
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -33,7 +36,6 @@ const UserManagement = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  // Fetch all users
   const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -54,7 +56,6 @@ const UserManagement = () => {
     }
   }, []);
 
-  // Socket.IO real-time sync
   useEffect(() => {
     fetchUsers();
 
@@ -79,7 +80,6 @@ const UserManagement = () => {
     };
   }, [fetchUsers]);
 
-  // Update Campus, Role, and auto-approve if both are configured
   const handleUserFieldChange = async (userId, field, value) => {
     try {
       setActionLoadingId(userId);
@@ -92,7 +92,6 @@ const UserManagement = () => {
         role: field === "role" ? value : currentUser.role,
       };
 
-      // Auto-approve if both campus and role are now assigned
       if (payload.campus && payload.role && currentUser.status === "Pending") {
         payload.status = "Approved";
       }
@@ -118,10 +117,9 @@ const UserManagement = () => {
     }
   };
 
-  // Explicit Approve Handler
   const handleApproveUser = async (user) => {
     if (!user.campus || !user.role) {
-      alert("Please assign both an Assigned Campus and an Assigned Rank / Role first.");
+      alert("Please assign both Campus and Role first.");
       return;
     }
 
@@ -149,7 +147,6 @@ const UserManagement = () => {
     }
   };
 
-  // Reject / Delete user
   const handleDeleteUser = async (userId, userName) => {
     if (!window.confirm(`Permanently remove ${userName || "this user"}?`)) return;
 
@@ -173,19 +170,16 @@ const UserManagement = () => {
     }
   };
 
-  // Filtering
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "All" || u.status === statusFilter;
+    const matchesStatus = statusFilter === "All" || u.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="user-management-container">
-      {/* Top Banner & Stats */}
       <div className="um-header">
         <div>
           <h2>User Administration</h2>
@@ -193,6 +187,14 @@ const UserManagement = () => {
         </div>
 
         <div className="um-filters">
+          <button
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+          >
+            {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
+
           <div className="search-box">
             <Search size={16} />
             <input
@@ -217,7 +219,6 @@ const UserManagement = () => {
         </div>
       </div>
 
-      {/* Main Table Card */}
       <div className="um-table-card">
         {isLoading ? (
           <div className="um-loading">
@@ -231,7 +232,7 @@ const UserManagement = () => {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="um-empty">
-            <Users size={32} color="#9aa0a6" />
+            <Users size={32} color="var(--text-secondary)" />
             <p>No users found matching your filters.</p>
           </div>
         ) : (
@@ -253,7 +254,6 @@ const UserManagement = () => {
 
                   return (
                     <tr key={u._id} className={isPending ? "row-pending" : ""}>
-                      {/* FULL NAME + JOIN DATE + EMAIL */}
                       <td>
                         <div className="user-name-col">
                           <strong className="user-fullname">{u.fullName}</strong>
@@ -270,7 +270,6 @@ const UserManagement = () => {
                         </div>
                       </td>
 
-                      {/* STATUS */}
                       <td>
                         <span className={`status-pill ${isPending ? "pending" : "approved"}`}>
                           {isPending ? (
@@ -285,7 +284,6 @@ const UserManagement = () => {
                         </span>
                       </td>
 
-                      {/* ASSIGNED CAMPUS */}
                       <td>
                         <select
                           className="um-select"
@@ -306,7 +304,6 @@ const UserManagement = () => {
                         </select>
                       </td>
 
-                      {/* ASSIGNED RANK / ROLE */}
                       <td>
                         <select
                           className="um-select"
@@ -327,10 +324,8 @@ const UserManagement = () => {
                         </select>
                       </td>
 
-                      {/* ACTIONS */}
                       <td>
                         <div className="um-actions-cell">
-                          {/* Approve Button (Appears if user is pending) */}
                           {isPending && (
                             <button
                               type="button"
@@ -343,7 +338,6 @@ const UserManagement = () => {
                             </button>
                           )}
 
-                          {/* Delete / Reject Button */}
                           <button
                             type="button"
                             className="action-btn delete"

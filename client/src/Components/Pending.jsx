@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
-import { Clock, Loader2, LogOut } from "lucide-react";
+import { useTheme } from "./ThemeContext";
+import { Clock, LogOut, Loader2, Sun, Moon } from "lucide-react";
 import "../Styles/Pending.css";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
@@ -9,60 +10,64 @@ const socket = io(BACKEND_URL);
 
 const Pending = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("userData") || "{}");
-
-  const routeApprovedUser = (approvedUser) => {
-    localStorage.setItem("userData", JSON.stringify(approvedUser));
-
-    if (approvedUser.role === "Organizer") {
-      navigate("/events/all", { replace: true });
-    } else if (approvedUser.campus) {
-      navigate(`/events/${approvedUser.campus.toLowerCase()}`, { replace: true });
-    } else {
-      navigate("/events/ramallah", { replace: true });
-    }
-  };
+  const { theme, toggleTheme } = useTheme();
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    if (!user?._id) {
+    const raw = localStorage.getItem("userData");
+    if (!raw) {
       navigate("/", { replace: true });
       return;
     }
 
-    // 1. If already approved, redirect immediately
-    if (user.status === "Approved") {
-      routeApprovedUser(user);
+    const parsed = JSON.parse(raw);
+    setCurrentUser(parsed);
+
+    if (parsed.status === "Approved" && parsed.campus && parsed.role) {
+      redirectToEvents(parsed);
       return;
     }
 
-    // 2. Real-time approval listener via Socket.IO
-    socket.on("user_updated", (updatedUser) => {
-      if (updatedUser._id === user._id && updatedUser.status === "Approved") {
-        routeApprovedUser(updatedUser);
+    const handleUserUpdate = (updatedUser) => {
+      if (updatedUser._id === parsed._id) {
+        if (updatedUser.status === "Approved") {
+          localStorage.setItem("userData", JSON.stringify(updatedUser));
+          redirectToEvents(updatedUser);
+        }
       }
-    });
+    };
 
-    // 3. Fallback: Check backend every 4 seconds in case WebSocket drops
+    socket.on("user_updated", handleUserUpdate);
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/api/users`);
-        const data = await res.json();
-        if (res.ok && data.data) {
-          const freshUser = data.data.find((u) => u._id === user._id);
+        const result = await res.json();
+        if (res.ok && result.data) {
+          const freshUser = result.data.find((u) => u._id === parsed._id);
           if (freshUser && freshUser.status === "Approved") {
-            routeApprovedUser(freshUser);
+            localStorage.setItem("userData", JSON.stringify(freshUser));
+            redirectToEvents(freshUser);
           }
         }
       } catch (err) {
-        console.error("Checking status error:", err);
+        console.error("Polling check failed", err);
       }
     }, 4000);
 
     return () => {
-      socket.off("user_updated");
+      socket.off("user_updated", handleUserUpdate);
       clearInterval(interval);
     };
-  }, [user?._id, navigate]);
+  }, [navigate]);
+
+  const redirectToEvents = (user) => {
+    if (user.role === "Organizer") {
+      navigate("/events/all", { replace: true });
+    } else if (user.campus) {
+      navigate(`/events/${user.campus.toLowerCase()}`, { replace: true });
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("userData");
@@ -71,26 +76,35 @@ const Pending = () => {
 
   return (
     <div className="pending-wrapper">
+      <div className="pending-theme-toggle">
+        <button
+          className="theme-toggle-btn"
+          onClick={toggleTheme}
+          title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+        >
+          {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
+      </div>
+
       <div className="pending-card">
         <div className="pending-icon-box">
-          <Clock size={40} color="#b06000" />
+          <Clock size={40} className="pending-clock-icon" />
         </div>
-        <h2>Request Pending Approval</h2>
-        <p>
-          Hello <strong>{user.fullName || "Member"}</strong>, your request to
-          join the GDG AAUP PR dashboard has been received.
+
+        <h2>Request Under Review</h2>
+        <p className="pending-desc">
+          Hello <strong>{currentUser?.fullName}</strong>, your account has been
+          registered and is awaiting approval by a GDG AAUP Organizer.
         </p>
-        <div className="status-note">
-          <Loader2 className="spinner" size={16} />
-          <span>Waiting for chapter organizer approval...</span>
+
+        <div className="pending-status-box">
+          <Loader2 size={16} className="spinner" />
+          <span>Listening for approval... You will be redirected automatically.</span>
         </div>
-        <p className="auto-redirect-hint">
-          This page will redirect automatically as soon as you are approved.
-        </p>
 
         <button className="pending-logout-btn" onClick={handleLogout}>
           <LogOut size={16} />
-          <span>Sign In With Another Account</span>
+          <span>Sign Out / Switch Account</span>
         </button>
       </div>
     </div>

@@ -5,9 +5,12 @@ import Pending from "./Components/Pending";
 import Events from "./Components/Events";
 import UserManagement from "./Components/UserManagement";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import { ThemeProvider } from "./Components/ThemeContext";
+import "./Styles/Theme.css";
 
 function App() {
   return (
+    <ThemeProvider>
     <Router>
       <Routes>
         {/* Public login / registration route */}
@@ -33,6 +36,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+    </ThemeProvider>
   );
 }
 

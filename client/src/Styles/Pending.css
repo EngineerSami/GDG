@@ -1,97 +1,143 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
 .pending-wrapper {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background-color: var(--bg-primary, #f8f9fa);
   padding: 24px;
   font-family: "Plus Jakarta Sans", sans-serif;
+  box-sizing: border-box;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.pending-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
 }
 
 .pending-card {
-  max-width: 480px;
-  background: #ffffff;
-  border-radius: 20px;
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e0e4e8);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
   padding: 40px 32px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: pendingFadeIn 0.3s ease-out;
 }
 
-.pending-icon-wrapper {
-  display: inline-flex;
-  padding: 16px;
+@keyframes pendingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pending-icon-box {
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: #fef7e0;
-  color: #b06000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 20px;
+  box-shadow: 0 0 0 8px rgba(254, 247, 224, 0.45);
 }
 
-.pulse-icon {
-  animation: pulse 2s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.7; }
+.pending-clock-icon {
+  color: #b06000;
 }
 
 .pending-card h2 {
   font-size: 22px;
   font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.pending-name {
-  font-size: 15px;
-  color: #202124;
-  margin-bottom: 12px;
+  color: var(--text-primary, #202124);
+  margin: 0 0 10px 0;
 }
 
 .pending-desc {
-  font-size: 13.5px;
-  color: #5f6368;
-  line-height: 1.5;
-  margin-bottom: 24px;
+  font-size: 14px;
+  color: var(--text-secondary, #5f6368);
+  line-height: 1.55;
+  margin: 0 0 24px 0;
 }
 
-.status-box {
+.pending-desc strong {
+  color: var(--text-primary, #202124);
+}
+
+.pending-status-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: #f1f3f4;
-  padding: 10px 14px;
-  border-radius: 10px;
+  gap: 10px;
+  background: var(--bg-primary, #f1f3f4);
+  border: 1px solid var(--border-color, #dadce0);
+  border-radius: 24px;
+  padding: 10px 16px;
   font-size: 12.5px;
-  font-weight: 600;
-  color: #3c4043;
-  margin-bottom: 24px;
+  font-weight: 500;
+  color: var(--text-primary, #3c4043);
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 28px;
 }
 
-.status-box .dot {
-  width: 8px;
-  height: 8px;
-  background: #0f9d58;
-  border-radius: 50%;
-  box-shadow: 0 0 6px #0f9d58;
+.spinner {
+  color: #0f9d58;
+  flex-shrink: 0;
+  animation: spin 1.2s linear infinite;
 }
 
-.logout-btn.secondary {
-  background: transparent;
-  border: 1px solid #dadce0;
-  color: #5f6368;
-  padding: 9px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.pending-logout-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color, #dadce0);
+  color: var(--text-secondary, #5f6368);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
   cursor: pointer;
+  width: 100%;
 }
 
-.logout-btn.secondary:hover {
-  background: #f8f9fa;
+.pending-logout-btn:hover {
+  background: #feebe8;
+  border-color: #fad2cf;
   color: #d93025;
+}
+
+/* ==========================================
+   DARK MODE OVERRIDES
+========================================== */
+[data-theme="dark"] .pending-icon-box {
+  background: #3e3212;
+  box-shadow: 0 0 0 8px rgba(254, 247, 224, 0.08);
+}
+
+[data-theme="dark"] .pending-clock-icon {
+  color: #ffd875;
 }

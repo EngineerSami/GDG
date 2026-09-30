@@ -12,20 +12,43 @@ import {
   Loader2,
   UserPlus,
   LogIn,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "./ThemeContext";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
 
+// Vector component rendering the GDG chevron bracket symbol
+const GdgBracket = ({ direction = "left", className = "" }) => (
+  <svg
+    viewBox="0 0 100 120"
+    fill="currentColor"
+    className={`gdg-bracket-svg ${direction} ${className}`}
+  >
+    {direction === "left" ? (
+      <path
+        d="M80 15 C85 20, 85 28, 78 35 L42 60 L78 85 C85 92, 85 100, 80 105 C75 110, 67 110, 60 105 L15 70 C7 65, 7 55, 15 50 L60 15 C67 10, 75 10, 80 15 Z"
+      />
+    ) : (
+      <path
+        d="M20 15 C15 20, 15 28, 22 35 L58 60 L22 85 C15 92, 15 100, 20 105 C25 110, 33 110, 40 105 L85 70 C93 65, 93 55, 85 50 L40 15 C33 10, 25 10, 20 15 Z"
+      />
+    )}
+  </svg>
+);
+
 const Userdata = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   // Tab State: "login" or "register"
   const [activeTab, setActiveTab] = useState("login");
 
   // Form Fields
-  const [identifier, setIdentifier] = useState(""); // Username or Email for Sign In
-  const [fullName, setFullName] = useState("");     // Register
-  const [email, setEmail] = useState("");           // Register
+  const [identifier, setIdentifier] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -144,7 +167,6 @@ const Userdata = () => {
         if (res.ok) {
           const user = data.data;
           localStorage.setItem("userData", JSON.stringify(user));
-          // New registrations are always pending approval
           navigate("/pending", { replace: true });
         } else {
           setError(data.message || "Registration failed");
@@ -161,6 +183,32 @@ const Userdata = () => {
 
   return (
     <div className="login-wrapper">
+      {/* Floating Animated GDG Shapes */}
+      <div className="floating-shapes-container" aria-hidden="true">
+        <div className="bubble-shape shape-1"><GdgBracket direction="left" /></div>
+        <div className="bubble-shape shape-2"><GdgBracket direction="right" /></div>
+        <div className="bubble-shape shape-3"><GdgBracket direction="left" /></div>
+        <div className="bubble-shape shape-4"><GdgBracket direction="right" /></div>
+        <div className="bubble-shape shape-5"><GdgBracket direction="left" /></div>
+        <div className="bubble-shape shape-6"><GdgBracket direction="right" /></div>
+        <div className="bubble-shape shape-7"><GdgBracket direction="left" /></div>
+        <div className="bubble-shape shape-8"><GdgBracket direction="right" /></div>
+        <div className="bubble-shape shape-9"><GdgBracket direction="left" /></div>
+        <div className="bubble-shape shape-10"><GdgBracket direction="right" /></div>
+      </div>
+
+      {/* Top Corner Dark Mode Button */}
+      <div className="login-theme-toggle">
+        <button
+          type="button"
+          className="theme-toggle-btn"
+          onClick={toggleTheme}
+          title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+        >
+          {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
+      </div>
+
       <div className="login-card">
         {/* Top Header */}
         <div className="login-header">
@@ -261,7 +309,7 @@ const Userdata = () => {
             </>
           )}
 
-          {/* Password (common to both) */}
+          {/* Password */}
           <div className="input-group">
             <label className="input-label">
               Password <span className="required-star">*</span>

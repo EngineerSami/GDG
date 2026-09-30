@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send, Crown, ShieldCheck, User } from "lucide-react";
+import { MessageSquare, X, Send, Crown, ShieldCheck } from "lucide-react";
 import "../Styles/ChatWidget.css";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
@@ -19,7 +19,7 @@ const ChatWidget = ({ socket, currentUser }) => {
 
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
