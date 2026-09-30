@@ -211,6 +211,7 @@ body {
   
 .login-card {
   max-width: 400px;
+  max-height: 600px;
 }
 }
 /* Header & Logo */
