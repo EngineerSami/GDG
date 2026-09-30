@@ -906,6 +906,87 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
+/* ==========================================
+   FINISHED EVENT BADGE & OPACITY
+========================================== */
+.note-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.note-status-badge.finished {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.sticky-note.event-finished {
+  opacity: 0.65;
+  filter: grayscale(0.25);
+  transition: opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+}
+
+.sticky-note.event-finished:hover {
+  opacity: 0.95;
+  filter: grayscale(0);
+}
+
+.sticky-note.event-finished .note-title {
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================
+   SPONSORS HEADER & SORTING SELECTOR
+========================================== */
+.sponsors-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sponsor-sort-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.sponsor-sort-select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Dark Mode Tweaks for Finished Events */
+[data-theme="dark"] .note-status-badge.finished {
+  background: rgba(255, 255, 255, 0.2);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .sticky-note.event-finished .note-title {
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+}
 
 /* ==========================================
    INTERACTIVE CORK/DOT-GRID BOARD

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import { useTheme } from "./ThemeContext";
@@ -21,6 +21,8 @@ import {
   LogOut,
   Sun,
   Moon,
+  ArrowUpDown,
+  CheckCircle,
   User as UserIcon,
 } from "lucide-react";
 
@@ -35,6 +37,19 @@ const SPONSOR_STATUSES = [
   "Rejected",
   "Approved",
 ];
+
+// Helper to determine if an event date has passed
+const isEventFinished = (dateString) => {
+  if (!dateString) return false;
+  const eventDate = new Date(dateString);
+  if (isNaN(eventDate.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  eventDate.setHours(23, 59, 59, 999);
+
+  return eventDate < today;
+};
 
 const Events = () => {
   const { campusName } = useParams();
@@ -59,6 +74,9 @@ const Events = () => {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
+  // Sponsor Sorting Option: "status" or "name"
+  const [sponsorSortBy, setSponsorSortBy] = useState("status");
+
   const [eventForm, setEventForm] = useState({
     name: "",
     description: "",
@@ -74,6 +92,7 @@ const Events = () => {
   });
   const [isEditingSponsor, setIsEditingSponsor] = useState(false);
 
+  // Fetch Events
   const fetchEvents = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -103,6 +122,7 @@ const Events = () => {
     }
   }, [campusName, isOrganizer, organizerFilter, user.role]);
 
+  // Realtime Listeners
   useEffect(() => {
     fetchEvents();
 
@@ -152,6 +172,48 @@ const Events = () => {
       socket.off("event_deleted", handleEventDeleted);
     };
   }, [fetchEvents, isOrganizer, organizerFilter, campusName]);
+
+  // SORT EVENTS: Upcoming first, then unspecified dates, then finished/past events
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => {
+      const aFinished = isEventFinished(a.date);
+      const bFinished = isEventFinished(b.date);
+
+      // Finished events go to the bottom
+      if (aFinished && !bFinished) return 1;
+      if (!aFinished && bFinished) return -1;
+
+      // Unspecified dates go after upcoming, but before finished
+      if (!a.date && b.date) return 1;
+      if (a.date && !b.date) return -1;
+      if (!a.date && !b.date) return 0;
+
+      // Chronological order (nearest date first)
+      return new Date(a.date) - new Date(b.date);
+    });
+  }, [events]);
+
+  // SORT SPONSORS: By Status priority or Alphabetical Name
+  const sortedSponsors = useMemo(() => {
+    if (!selectedEvent?.sponsors) return [];
+
+    const priorityMap = {
+      Approved: 1,
+      "Awaiting Response": 2,
+      Suggestion: 3,
+      "No Response": 4,
+      Rejected: 5,
+    };
+
+    return [...selectedEvent.sponsors].sort((a, b) => {
+      if (sponsorSortBy === "name") {
+        return (a.name || "").localeCompare(b.name || "");
+      }
+      const pA = priorityMap[a.status] || 99;
+      const pB = priorityMap[b.status] || 99;
+      return pA - pB;
+    });
+  }, [selectedEvent, sponsorSortBy]);
 
   const handleLogout = () => {
     localStorage.removeItem("userData");
@@ -398,63 +460,76 @@ const Events = () => {
             <AlertCircle color="#ea4335" size={32} />
             <p>{errorMessage}</p>
           </div>
-        ) : events.length === 0 ? (
+        ) : sortedEvents.length === 0 ? (
           <div className="empty-board">
             <p>No events found.</p>
             {hasEventAdminRights && <span>Click "Create Event" to add one!</span>}
           </div>
         ) : (
           <div className="board-grid">
-            {events.map((ev) => (
-              <div
-                key={ev._id}
-                className={`sticky-note ${ev.colorClass || "note-yellow"}`}
-                onClick={() => setSelectedEvent(ev)}
-              >
-                <div className="note-pin"></div>
+            {sortedEvents.map((ev) => {
+              const finished = isEventFinished(ev.date);
 
-                {hasEventAdminRights && (
-                  <div
-                    className="note-actions"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      className="note-btn"
-                      title="Edit Event"
-                      onClick={() => handleOpenEventModal(ev)}
-                    >
-                      <Edit2 size={15} color="currentColor" />
-                    </button>
-                    <button
-                      className="note-btn delete"
-                      title="Delete Event"
-                      onClick={(e) => handleDeleteEvent(ev._id, e)}
-                    >
-                      <Trash2 size={15} color="#ea4335" />
-                    </button>
-                  </div>
-                )}
+              return (
+                <div
+                  key={ev._id}
+                  className={`sticky-note ${ev.colorClass || "note-yellow"} ${
+                    finished ? "event-finished" : ""
+                  }`}
+                  onClick={() => setSelectedEvent(ev)}
+                >
+                  <div className="note-pin"></div>
 
-                <div className="note-content">
-                  {isOrganizer && (
-                    <span className="note-campus-badge">{ev.campus}</span>
+                  {hasEventAdminRights && (
+                    <div
+                      className="note-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className="note-btn"
+                        title="Edit Event"
+                        onClick={() => handleOpenEventModal(ev)}
+                      >
+                        <Edit2 size={15} color="currentColor" />
+                      </button>
+                      <button
+                        className="note-btn delete"
+                        title="Delete Event"
+                        onClick={(e) => handleDeleteEvent(ev._id, e)}
+                      >
+                        <Trash2 size={15} color="#ea4335" />
+                      </button>
+                    </div>
                   )}
-                  <h3 className="note-title">{ev.name}</h3>
-                  <p className="note-desc">{ev.description}</p>
-                </div>
 
-                <div className="note-footer">
-                  <div className="note-date">
-                    <Calendar size={14} />
-                    <span>{ev.date || "Date Unspecified"}</span>
+                  <div className="note-content">
+                    <div className="note-badges-row">
+                      {isOrganizer && (
+                        <span className="note-campus-badge">{ev.campus}</span>
+                      )}
+                      {finished && (
+                        <span className="note-status-badge finished">
+                          <CheckCircle size={10} /> Finished
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="note-title">{ev.name}</h3>
+                    <p className="note-desc">{ev.description}</p>
                   </div>
-                  <div className="note-sponsor-tag">
-                    <Building2 size={13} />
-                    <span>{ev.sponsors?.length || 0} sponsors</span>
+
+                  <div className="note-footer">
+                    <div className="note-date">
+                      <Calendar size={14} />
+                      <span>{ev.date || "Date Unspecified"}</span>
+                    </div>
+                    <div className="note-sponsor-tag">
+                      <Building2 size={13} />
+                      <span>{ev.sponsors?.length || 0} sponsors</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
@@ -568,11 +643,26 @@ const Events = () => {
             <hr className="divider" />
 
             <div className="sponsors-section">
-              <div className="section-title">
-                <h3>Sponsors & Partners</h3>
-                <span className="count-badge">
-                  {selectedEvent.sponsors?.length || 0}
-                </span>
+              <div className="sponsors-section-header">
+                <div className="section-title">
+                  <h3>Sponsors & Partners</h3>
+                  <span className="count-badge">
+                    {selectedEvent.sponsors?.length || 0}
+                  </span>
+                </div>
+
+                {/* Sponsor Sort Selector */}
+                <div className="sponsor-sort-wrapper">
+                  <ArrowUpDown size={14} />
+                  <select
+                    value={sponsorSortBy}
+                    onChange={(e) => setSponsorSortBy(e.target.value)}
+                    className="sponsor-sort-select"
+                  >
+                    <option value="status">Sort: Status Priority</option>
+                    <option value="name">Sort: Name (A-Z)</option>
+                  </select>
+                </div>
               </div>
 
               <form onSubmit={handleSaveSponsor} className="sponsor-inline-form">
@@ -582,7 +672,7 @@ const Events = () => {
                   required
                   value={sponsorForm.name}
                   onChange={(e) =>
-                    setEventForm({ ...sponsorForm, name: e.target.value })
+                    setSponsorForm({ ...sponsorForm, name: e.target.value })
                   }
                 />
                 <input
@@ -629,12 +719,12 @@ const Events = () => {
               </form>
 
               <div className="sponsors-list">
-                {!selectedEvent.sponsors || selectedEvent.sponsors.length === 0 ? (
+                {sortedSponsors.length === 0 ? (
                   <p className="empty-sponsors">
                     No sponsors recorded yet. Submit a suggestion above!
                   </p>
                 ) : (
-                  selectedEvent.sponsors.map((sp) => (
+                  sortedSponsors.map((sp) => (
                     <div key={sp._id} className="sponsor-card">
                       <div className="sponsor-info">
                         <h4>{sp.name}</h4>
