@@ -1018,3 +1018,29 @@
     radial-gradient(ellipse 50% 50% at 80% 80%, rgba(15, 157, 88, 0.12), transparent 70%);
   background-size: 24px 24px, 100% 100%, 100% 100%;
 }
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.export-btn:hover {
+  background-color: rgba(15, 157, 88, 0.08);
+  border-color: #0f9d58;
+  color: #0f9d58;
+}
+
+[data-theme="dark"] .export-btn:hover {
+  background-color: rgba(15, 157, 88, 0.2);
+  border-color: #34a853;
+  color: #8be0a4;
+}

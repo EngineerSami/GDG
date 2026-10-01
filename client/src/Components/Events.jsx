@@ -23,8 +23,10 @@ import {
   Moon,
   ArrowUpDown,
   CheckCircle,
+  Download,
   User as UserIcon,
 } from "lucide-react";
+import { exportEventsToExcel } from "./exportEventsExcel";
 
 const BACKEND_URL = "https://gdg-a5ba.onrender.com";
 const API_BASE_URL = `${BACKEND_URL}/api/events`;
@@ -401,6 +403,14 @@ const Events = () => {
         </div>
 
         <div className="header-actions">
+        <button
+          className="export-btn"
+          onClick={() => exportEventsToExcel(sortedEvents, user, organizerFilter)}
+          title="Export Events & Sponsors to Excel"
+        >
+          <Download size={16} />
+          <span>Export Excel</span>
+        </button>
           {isOrganizer && (
             <div className="campus-toggle">
               <button
