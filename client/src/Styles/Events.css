@@ -606,6 +606,7 @@
     padding: 20px 16px !important;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
   }
 
   .sponsor-inline-form {
